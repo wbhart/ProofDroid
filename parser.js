@@ -232,30 +232,36 @@ function peg$parse(input, options) {
   var peg$f11 = function() { return text(); };
   var peg$f12 = function() { return text(); };
   var peg$f13 = function(op, v, f) {
-      return createQuantifier(op === "\\forall" ? "UNIVERSAL" : "EXISTENTIAL", v, f);
+      return createQuantifier(op === "\\forall" ? "UNIVERSAL" : "EXISTENTIAL", v, f, op, op === "\\forall" ? "∀" : "∃");
   };
-  var peg$f14 = function(l, r) { return createBinaryConnective("IFF", l, r); };
-  var peg$f15 = function(l, r) { return createBinaryConnective("IMPLICATION", l, r); };
+  var peg$f14 = function(l, r) {
+      return createBinaryConnective("IFF", l, r, "infix", "\\iff", "↔", 1, "none");
+  };
+  var peg$f15 = function(l, r) {
+      return createBinaryConnective("IMPLICATION", l, r, "infix", "\\implies", "→", 2, "right");
+  };
   var peg$f16 = function(l, tail) {
       return tail.reduce((result, element) => {
-        return createBinaryConnective("CONJUNCTION", result, element[3]);
+        return createBinaryConnective("CONJUNCTION", result, element[3], "infix", "\\wedge", "∧", 3, "left");
       }, l);
     };
   var peg$f17 = function(l, tail) {
       return tail.reduce((result, element) => {
-        return createBinaryConnective("DISJUNCTION", result, element[3]);
+        return createBinaryConnective("DISJUNCTION", result, element[3], "infix", "\\vee", "∨", 4, "left");
       }, l);
     };
   var peg$f18 = function(t1, i, t2) {
-      return createPredicate(i, 2, [t1, t2]);
+      return createPredicate(i, 2, [t1, t2], "=");
   };
   var peg$f19 = function(i, args) {
-      return createPredicate(i, args.length, args);
+      return createPredicate(i, args.length, args, i);
   };
-  var peg$f20 = function(f) { return createNegation(f); };
+  var peg$f20 = function(f) {
+      return createUnary("Negation", f, "prefix", "\\neg", "¬", 5);
+  };
   var peg$f21 = function(f) { return f; };
   var peg$f22 = function(i, args) {
-      return createFunction(i, args.length, args);
+      return createFunction(i, args.length, args, i);
   };
   var peg$f23 = function(args) {
       return createSet(args.length, args);
@@ -1359,36 +1365,36 @@ function peg$parse(input, options) {
 
 
   // Helper functions for creating AST nodes
-  function createQuantifier(type, term, formula) {
-    return { type: "Quantifier", quantifierType: type, variable: term, formula: formula };
+  function createQuantifier(type, term, formula, identifier, unicode) {
+    return { type: "Quantifier", quantifierType: type, variable: term, formula: formula, fixity: "prefix", identifier: identifier, unicode: unicode, precedence: 0 };
   }
 
-  function createNegation(formula) {
-    return { type: "Negation", formula: formula };
+  function createUnary(type, formula, fixity, identifier, unicode, precedence) {
+    return { type: type, formula: formula, fixity: fixity, identifier: identifier, unicode: unicode, precedence: precedence };
   }
 
-  function createBinaryConnective(connective, left, right) {
-    return { type: "BinaryConnective", connective: connective, left: left, right: right };
+  function createBinaryConnective(connective, left, right, fixity, identifier, unicode, precedence, associativity) {
+    return { type: "BinaryConnective", connective: connective, left: left, right: right, fixity: fixity, identifier: identifier, unicode: unicode, precedence: precedence, associativity: associativity };
   }
 
-  function createPredicate(identifier, count, terms) {
-    return { type: "Predicate", identifier: identifier, arguments: terms.slice(0, count) };
+  function createPredicate(identifier, count, terms, unicode) {
+    return { type: "Predicate", identifier: identifier, arguments: terms.slice(0, count), fixity: "functional", unicode: unicode, precedence: 0 };
   }
 
-  function createFunction(term, count, terms) {
-    return { type: "Function", functionName: term, arguments: terms.slice(0, count) };
+  function createFunction(term, count, terms, unicode) {
+    return { type: "Function", functionName: term, arguments: terms.slice(0, count), fixity: "functional", identifier: term, unicode: unicode, precedence: 0 };
   }
 
   function createVariable(name) {
-    return { type: "Variable", name: name };
+    return { type: "Variable", name: name, precedence: 0 };
   }
 
   function createSet(count, terms) {
-    return { type: "Set", elements: terms.slice(0, count) };
+    return { type: "Set", elements: terms.slice(0, count), precedence: 0 };
   }
 
   function createTuple(count, terms) {
-    return { type: "Tuple", elements: terms.slice(0, count) };
+    return { type: "Tuple", elements: terms.slice(0, count), precedence: 0 };
   }
 
   peg$result = peg$startRuleFunction();

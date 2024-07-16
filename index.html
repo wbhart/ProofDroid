@@ -8,24 +8,38 @@
     <h1>Peggy Parser Example</h1>
     <input type="text" id="inputField" placeholder="Enter text to parse">
     <p id="status"></p>
+    <h2>String Representations</h2>
+    <pre id="str-repr"></pre>
+    <h2>Unicode Representations</h2>
+    <pre id="str-unicode"></pre>
+    <h2>Polish Notation</h2>
+    <pre id="str-polish"></pre>
 
-    <!-- Include the generated parser -->
+    <!-- Include the generated parser and string functions -->
     <script type="module">
         import { parse } from './parser.js';
+        import { str_repr, str_unicode, str_polish } from './strings.js';
 
         document.getElementById('inputField').addEventListener('input', () => {
             const input = document.getElementById('inputField').value;
             const statusField = document.getElementById('status');
+            const strReprField = document.getElementById('str-repr');
+            const strUnicodeField = document.getElementById('str-unicode');
+            const strPolishField = document.getElementById('str-polish');
 
             try {
                 const result = parse(input);
                 statusField.innerText = `Parsed successfully: ${JSON.stringify(result)}`;
+                strReprField.innerText = str_repr(result);
+                strUnicodeField.innerText = str_unicode(result);
+                strPolishField.innerText = str_polish(result);
             } catch (e) {
                 statusField.innerText = `Error: ${e.message}`;
+                strReprField.innerText = '';
+                strUnicodeField.innerText = '';
+                strPolishField.innerText = '';
             }
         });
     </script>
 </body>
 </html>
-
-
