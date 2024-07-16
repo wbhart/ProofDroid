@@ -6,13 +6,11 @@
 </head>
 <body>
     <h1>Peggy Parser Example</h1>
-    <input type="text" id="inputField" placeholder="Enter text to parse">
+    <textarea id="inputField" placeholder="Enter text to parse" rows="10" cols="50"></textarea>
     <p id="status"></p>
     <h2>String Representations</h2>
     <pre id="str-repr"></pre>
-    <h2>Unicode Representations</h2>
     <pre id="str-unicode"></pre>
-    <h2>Polish Notation</h2>
     <pre id="str-polish"></pre>
 
     <!-- Include the generated parser and string functions -->
@@ -20,16 +18,47 @@
         import { parse } from './parser.js';
         import { str_repr, str_unicode, str_polish } from './strings.js';
 
+        function getCaretPosition(ctrl) {
+            var caretPos = 0;
+            if (document.selection) {
+                ctrl.focus();
+                var sel = document.selection.createRange();
+                sel.moveStart('character', -ctrl.value.length);
+                caretPos = sel.text.length;
+            } else if (ctrl.selectionStart || ctrl.selectionStart === '0') {
+                caretPos = ctrl.selectionStart;
+            }
+            return caretPos;
+        }
+
+        function getCurrentLine(textarea) {
+            const caretPosition = getCaretPosition(textarea);
+            const text = textarea.value;
+            const lines = text.split('\n');
+            let currentLine = 0;
+            let charCount = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                charCount += lines[i].length + 1; // +1 for the newline character
+                if (charCount > caretPosition) {
+                    currentLine = i;
+                    break;
+                }
+            }
+            return lines[currentLine];
+        }
+
         document.getElementById('inputField').addEventListener('input', () => {
-            const input = document.getElementById('inputField').value;
+            const inputField = document.getElementById('inputField');
+            const currentLine = getCurrentLine(inputField);
             const statusField = document.getElementById('status');
             const strReprField = document.getElementById('str-repr');
             const strUnicodeField = document.getElementById('str-unicode');
             const strPolishField = document.getElementById('str-polish');
 
             try {
-                const result = parse(input);
-                statusField.innerText = `Parsed successfully: ${JSON.stringify(result)}`;
+                const result = parse(currentLine);
+                statusField.innerText = '';
                 strReprField.innerText = str_repr(result);
                 strUnicodeField.innerText = str_unicode(result);
                 strPolishField.innerText = str_polish(result);
@@ -43,3 +72,4 @@
     </script>
 </body>
 </html>
+
