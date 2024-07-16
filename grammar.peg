@@ -1,0 +1,148 @@
+{
+  // Helper functions for creating AST nodes
+  function createQuantifier(type, term, formula) {
+    return { type: "Quantifier", quantifierType: type, variable: term, formula: formula };
+  }
+
+  function createNegation(formula) {
+    return { type: "Negation", formula: formula };
+  }
+
+  function createBinaryConnective(connective, left, right) {
+    return { type: "BinaryConnective", connective: connective, left: left, right: right };
+  }
+
+  function createPredicate(identifier, count, terms) {
+    return { type: "Predicate", identifier: identifier, arguments: terms.slice(0, count) };
+  }
+
+  function createFunction(term, count, terms) {
+    return { type: "Function", functionName: term, arguments: terms.slice(0, count) };
+  }
+
+  function createVariable(name) {
+    return { type: "Variable", name: name };
+  }
+
+  function createSet(count, terms) {
+    return { type: "Set", elements: terms.slice(0, count) };
+  }
+
+  function createTuple(count, terms) {
+    return { type: "Tuple", elements: terms.slice(0, count) };
+  }
+}
+
+Start
+  = _ formula:Formula _ { return formula; }
+
+// Lexical rules
+_
+  = [ \t]*
+
+EOL
+  = '\n' / '\r' / '\r\n'
+
+Identifier
+  = [A-Z] [a-zA-Z0-9]* { return text(); }
+
+Variable
+  = [a-z] [0-9]* { return createVariable(text()); }
+
+QuantifierOp
+  = "\\forall" { return text(); }
+  / "\\exists" { return text(); }
+
+NEG = "\\neg" { return text(); }
+WEDGE = "\\wedge" { return text(); }
+VEE = "\\vee" { return text(); }
+IMPLIES = "\\implies" { return text(); }
+IFF = "\\iff" { return text(); }
+FORALL = "\\forall" { return text(); }
+EXISTS = "\\exists" { return text(); }
+EQUALS = '=' { return text(); }
+OPEN = '('
+CLOSE = ')'
+COMMA = ','
+LBRACE = '{'
+RBRACE = '}'
+
+// Main rules
+Formula
+  = Quantifier
+  / IffFormula
+  / Predicate
+
+Quantifier
+  = op:QuantifierOp _ v:Variable _ f:SimpleFormula {
+      return createQuantifier(op === "\\forall" ? "UNIVERSAL" : "EXISTENTIAL", v, f);
+  }
+
+IffFormula
+  = l:ImpliesFormula _ IFF _ r:IffFormula { return createBinaryConnective("IFF", l, r); }
+  / ImpliesFormula
+
+ImpliesFormula
+  = l:AndFormula _ IMPLIES _ r:ImpliesFormula { return createBinaryConnective("IMPLICATION", l, r); }
+  / AndFormula
+
+AndFormula
+  = l:OrFormula tail:(_ WEDGE _ r:OrFormula)* {
+      return tail.reduce((result, element) => {
+        return createBinaryConnective("CONJUNCTION", result, element[3]);
+      }, l);
+    }
+
+OrFormula
+  = l:SimpleFormula tail:(_ VEE _ r:SimpleFormula)* {
+      return tail.reduce((result, element) => {
+        return createBinaryConnective("DISJUNCTION", result, element[3]);
+      }, l);
+    }
+
+EqualPredicate
+  = t1:Term _ i:EQUALS _ t2:Term {
+      return createPredicate(i, 2, [t1, t2]);
+  }
+
+Predicate
+  = i:Identifier _ OPEN _ args:TermList _ CLOSE {
+      return createPredicate(i, args.length, args);
+  }
+
+Negation
+  = NEG _ f:SimpleFormula { return createNegation(f); }
+
+SimpleFormula
+  = Quantifier
+  / Predicate
+  / EqualPredicate
+  / Negation
+  / OPEN _ f:Formula _ CLOSE { return f; }
+
+Term
+  = Function
+  / Variable
+  / Set
+  / Tuple
+
+Function
+  = i:Variable _ OPEN _ args:TermList _ CLOSE {
+      return createFunction(i, args.length, args);
+  }
+
+Set
+  = LBRACE _ args:TermList _ RBRACE {
+      return createSet(args.length, args);
+  }
+
+TermList
+  = head:Term tail:(_ COMMA _ Term)* {
+      return [head].concat(tail.map(e => e[3]));
+  }
+
+Tuple
+  = OPEN _ args:TermList _ CLOSE {
+      return createTuple(args.length, args);
+  }
+

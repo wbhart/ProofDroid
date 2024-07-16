@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Peggy Parser Example</title>
+</head>
+<body>
+    <h1>Peggy Parser Example</h1>
+    <input type="text" id="inputField" placeholder="Enter text to parse">
+    <p id="status"></p>
+
+    <!-- Include the generated parser -->
+    <script type="module">
+        import { parse } from './parser.js';
+
+        document.getElementById('inputField').addEventListener('input', () => {
+            const input = document.getElementById('inputField').value;
+            const statusField = document.getElementById('status');
+
+            try {
+                const result = parse(input);
+                statusField.innerText = `Parsed successfully: ${JSON.stringify(result)}`;
+            } catch (e) {
+                statusField.innerText = `Error: ${e.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
+
+
