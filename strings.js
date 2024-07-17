@@ -1,75 +1,98 @@
 function str_repr(node) {
-  return toString(node, 'identifier');
+  switch (node.type) {
+    case "Variable":
+      return node.name;
+    case "Application":
+      if (node.fixity === "functional") {
+        return `${str_repr(node.symbol)}(${node.arguments.map(arg => str_repr(arg)).join(", ")})`;
+      } else {
+        return `${node.arguments.map(arg => str_repr(arg)).join(` ${str_repr(node.symbol)} `)}`;
+      }
+    case "Tuple":
+      return `(${node.elements.map(element => str_repr(element)).join(", ")})`;
+    case "LogicalUnary":
+      return `${node.identifier} ${parenthesize(node, node.formula, str_repr, true)}`;
+    case "Quantifier":
+      return `${node.identifier} ${str_repr(node.variable)} (${str_repr(node.formula)})`;
+    case "LogicalBinary":
+      return `${parenthesize(node, node.left, str_repr, false, 'left')} ${node.identifier} ${parenthesize(node, node.right, str_repr, false, 'right')}`;
+    default:
+      throw new Error(`Unknown node type: ${node.type}`);
+  }
 }
 
 function str_unicode(node) {
-  return toString(node, 'unicode');
+  switch (node.type) {
+    case "Variable":
+      return node.name;
+    case "Application":
+      if (node.fixity === "functional") {
+        return `${str_unicode(node.symbol)}(${node.arguments.map(arg => str_unicode(arg)).join(", ")})`;
+      } else {
+        return `${node.arguments.map(arg => str_unicode(arg)).join(` ${str_unicode(node.symbol)} `)}`;
+      }
+    case "Tuple":
+      return `(${node.elements.map(element => str_unicode(element)).join(", ")})`;
+    case "LogicalUnary":
+      return `${node.unicode}${parenthesize(node, node.formula, str_unicode, true)}`;
+    case "Quantifier":
+      return `${node.unicode}${str_unicode(node.variable)} (${str_unicode(node.formula)})`;
+    case "LogicalBinary":
+      return `${parenthesize(node, node.left, str_unicode, false, 'left')} ${node.unicode} ${parenthesize(node, node.right, str_unicode, false, 'right')}`;
+    default:
+      throw new Error(`Unknown node type: ${node.type}`);
+  }
 }
 
 function str_polish(node) {
-  return toPolish(node, 'unicode');
-}
-
-function toString(node, field) {
   switch (node.type) {
     case "Variable":
       return node.name;
-    case "Predicate":
-      return `${node[field]}(${node.arguments.map(arg => toString(arg, field)).join(", ")})`;
-    case "Function":
-      return `${node.functionName}(${node.arguments.map(arg => toString(arg, field)).join(", ")})`;
-    case "Set":
-      return `{${node.elements.map(element => toString(element, field)).join(", ")}}`;
+    case "Application":
+      return `${str_polish(node.symbol)} ${node.arguments.map(arg => str_polish(arg)).join(" ")}`;
     case "Tuple":
-      return `(${node.elements.map(element => toString(element, field)).join(", ")})`;
-    case "Negation":
-      return `${node[field]}${parenthesize(node.formula, node.precedence, toString, field)}`;
+      return `(${node.elements.map(element => str_polish(element)).join(" ")})`;
+    case "LogicalUnary":
+      return `${node.unicode} ${str_polish(node.formula)}`;
     case "Quantifier":
-      return `${node[field]} ${toString(node.variable, field)} ${toString(node.formula, field)}`;
-    case "BinaryConnective":
-      return `${parenthesize(node.left, node.precedence, toString, field)} ${node[field]} ${parenthesize(node.right, node.precedence, toString, field)}`;
+      return `${node.unicode} ${str_polish(node.variable)} ${str_polish(node.formula)}`;
+    case "LogicalBinary":
+      return `${node.unicode} ${str_polish(node.left)} ${str_polish(node.right)}`;
     default:
       throw new Error(`Unknown node type: ${node.type}`);
   }
 }
 
-function toPolish(node, field) {
-  switch (node.type) {
-    case "Variable":
-      return node.name;
-    case "Predicate":
-      return `${node[field]} ${node.arguments.map(arg => toPolish(arg, field)).join(" ")}`;
-    case "Function":
-      return `${node.functionName} ${node.arguments.map(arg => toPolish(arg, field)).join(" ")}`;
-    case "Set":
-      return `{${node.elements.map(element => toPolish(element, field)).join(", ")}}`;
-    case "Tuple":
-      return `(${node.elements.map(element => toPolish(element, field)).join(", ")})`;
-    case "Negation":
-      return `${node[field]} ${toPolish(node.formula, field)}`;
-    case "Quantifier":
-      return `${node[field]} ${toPolish(node.variable, field)} ${toPolish(node.formula, field)}`;
-    case "BinaryConnective":
-      return `${node[field]} ${toPolish(node.left, field)} ${toPolish(node.right, field)}`;
-    default:
-      throw new Error(`Unknown node type: ${node.type}`);
+function parenthesize(parent, child, stringFunc, childPosition) {
+  if (child.type === "Variable" || child.type === "Application" || child.type === "Tuple") {
+    return stringFunc(child);
   }
-}
 
-function parenthesize(child, parentPrecedence, stringFunc, field) {
-  if (child.type === "Variable" || child.type === "Predicate" || child.type === "Function" || child.type === "Set" || child.type === "Tuple") {
-    return stringFunc(child, field);
+  if (child.precedence < parent.precedence) {
+    return stringFunc(child);
   }
-  if (child.precedence > parentPrecedence) {
-    return stringFunc(child, field);
+
+  if (child.precedence === parent.precedence) {
+    if (child.type !== "LogicalBinary") {
+      return `(${stringFunc(child)})`;
+    }
+
+    if (child.associativity !== parent.associativity || child.associativity === "none") {
+      return `(${stringFunc(child)})`;
+    }
+
+    if ((parent.associativity === "left" && childPosition === 'right') || (parent.associativity === "right" && childPosition === 'left')) {
+      return `(${stringFunc(child)})`;
+    }
+
+    if (child.identifier !== parent.identifier) {
+      return `(${stringFunc(child)})`;
+    }
+
+    return stringFunc(child);
   }
-  if (child.precedence === parentPrecedence && (child.associativity === "right" || child.type !== "BinaryConnective")) {
-    return `(${stringFunc(child, field)})`;
-  }
-  if (child.precedence === parentPrecedence && (child.associativity === "left" || child.type !== "BinaryConnective")) {
-    return `(${stringFunc(child, field)})`;
-  }
-  return `(${stringFunc(child, field)})`;
+
+  return `(${stringFunc(child)})`;
 }
 
 export {

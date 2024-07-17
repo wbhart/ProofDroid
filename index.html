@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Peggy Parser Example</title>
+    <title>Proof Droid v0.1</title>
 </head>
 <body>
-    <h1>Peggy Parser Example</h1>
+    <h1>Proof Droid v0.1</h1>
     <textarea id="inputField" placeholder="Enter text to parse" rows="10" cols="50"></textarea>
     <p id="status"></p>
     <h2>String Representations</h2>
@@ -56,18 +56,11 @@
             const strUnicodeField = document.getElementById('str-unicode');
             const strPolishField = document.getElementById('str-polish');
 
-            try {
-                const result = parse(currentLine);
-                statusField.innerText = '';
-                strReprField.innerText = str_repr(result);
-                strUnicodeField.innerText = str_unicode(result);
-                strPolishField.innerText = str_polish(result);
-            } catch (e) {
-                statusField.innerText = `Error: ${e.message}`;
-                strReprField.innerText = '';
-                strUnicodeField.innerText = '';
-                strPolishField.innerText = '';
-            }
+            const result = parse(currentLine);
+            statusField.innerText = '';
+            strReprField.innerText = str_repr(result);
+            strUnicodeField.innerText = str_unicode(result);
+            strPolishField.innerText = str_polish(result);
         });
     </script>
 </body>
