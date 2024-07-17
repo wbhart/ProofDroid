@@ -51,7 +51,7 @@ function str_polish(node) {
     case "Application":
       return `${str_polish(node.symbol)} ${node.arguments.map(arg => str_polish(arg)).join(" ")}`;
     case "Tuple":
-      return `(${node.elements.map(element => str_polish(element)).join(" ")})`;
+      return `${', '.repeat(node.elements.length - 1)}${node.elements.map(element => str_polish(element)).join(" ")}`;
     case "LogicalUnary":
       return `${node.unicode} ${str_polish(node.formula)}`;
     case "Quantifier":
