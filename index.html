@@ -7,11 +7,11 @@
 <body>
     <h1>Proof Droid v0.1</h1>
     <textarea id="inputField" placeholder="Enter text to parse" rows="10" cols="50"></textarea>
-    <p id="status"></p>
     <h2>String Representations</h2>
     <pre id="str-repr"></pre>
     <pre id="str-unicode"></pre>
     <pre id="str-polish"></pre>
+    <p id="status"></p>
 
     <!-- Include the generated parser and string functions -->
     <script type="module">
@@ -56,13 +56,25 @@
             const strUnicodeField = document.getElementById('str-unicode');
             const strPolishField = document.getElementById('str-polish');
 
-            const result = parse(currentLine);
-            statusField.innerText = '';
-            strReprField.innerText = str_repr(result);
-            strUnicodeField.innerText = str_unicode(result);
-            strPolishField.innerText = str_polish(result);
+            try {
+                const result = parse(currentLine);
+                statusField.innerText = '';
+                strReprField.innerText = str_repr(result);
+                strUnicodeField.innerText = str_unicode(result);
+                strPolishField.innerText = str_polish(result);
+            } catch (e) {
+                if (e.name === 'SyntaxError') {
+                    statusField.innerText = `Syntax Error: ${e.message}`;
+                } else {
+                    throw e; // Re-throw the exception for other types of errors
+                }
+                strReprField.innerText = '';
+                strUnicodeField.innerText = '';
+                strPolishField.innerText = '';
+            }
         });
     </script>
 </body>
 </html>
+
 
