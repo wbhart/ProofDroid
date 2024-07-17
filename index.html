@@ -2,15 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Proof Droid v0.1</title>
+    <title>Proof Droid -- v0.1</title>
+    <STYLE type="text/css">
+     H1.header {text-align: center}
+    </STYLE>
 </head>
 <body>
-    <h1>Proof Droid v0.1</h1>
-    <textarea id="inputField" placeholder="Enter text to parse" rows="10" cols="50"></textarea>
+    <h1 class="header">Proof Droid -- ver 0.1</h1>
+    <textarea id="inputField" placeholder="Enter text to parse" rows="15" cols="72"></textarea><img src="droid.png" width="280ex">
     <h2>String Representations</h2>
-    <pre id="str-repr"></pre>
-    <pre id="str-unicode"></pre>
-    <pre id="str-polish"></pre>
+    <p><b>Latex:</b> <pre id="str-repr"></pre></p>
+    <p><b>Unicode:</b> <pre id="str-unicode"></pre></p>
+    <p><b>Polish:</b> <pre id="str-polish"></pre></p>
     <p id="status"></p>
 
     <!-- Include the generated parser and string functions -->
