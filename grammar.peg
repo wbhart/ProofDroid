@@ -1,27 +1,27 @@
 {
   // Helper functions for creating AST nodes
-  function createQuantifier(type, term, formula, identifier, unicode) {
-    return { type: "Quantifier", quantifierType: type, variable: term, formula: formula, fixity: "prefix", identifier: identifier, unicode: unicode, precedence: 0 };
+  function createQuantifier(variable, formula, name) {
+    return { type: "Quantifier", variable: variable, formula: formula, name: name };
   }
 
-  function createLogicalUnary(formula, fixity, identifier, unicode, precedence) {
-    return { type: "LogicalUnary", formula: formula, fixity: fixity, identifier: identifier, unicode: unicode, precedence: precedence };
+  function createLogicalUnary(formula, name) {
+    return { type: "LogicalUnary", formula: formula, name: name };
   }
 
-  function createLogicalBinary(left, right, fixity, identifier, unicode, precedence, associativity) {
-    return { type: "LogicalBinary", left: left, right: right, fixity: fixity, identifier: identifier, unicode: unicode, precedence: precedence, associativity: associativity };
+  function createLogicalBinary(left, right, name) {
+    return { type: "LogicalBinary", left: left, right: right, name: name };
   }
 
-  function createApplication(term, count, terms, fixity) {
-    return { type: "Application", symbol: term, arguments: terms.slice(0, count), fixity: fixity, precedence: 0, predicate: false };
+  function createApplication(symbol, count, args) {
+    return { type: "Application", symbol: symbol, arguments: args.slice(0, count) };
   }
 
   function createVariable(name) {
-    return { type: "Variable", name: name, precedence: 0 };
+    return { type: "Variable", name: name };
   }
 
   function createTuple(count, terms) {
-    return { type: "Tuple", elements: terms.slice(0, count), precedence: 0 };
+    return { type: "Tuple", elements: terms.slice(0, count) };
   }
 }
 
@@ -39,17 +39,17 @@ Variable
   = [A-Za-z] [a-zA-Z0-9]* { return createVariable(text()); }
 
 QuantifierOp
-  = "\\forall" { return text(); }
-  / "\\exists" { return text(); }
+  = FORALL
+  / EXISTS
 
-NEG = "\\neg" { return text(); }
-WEDGE = "\\wedge" { return text(); }
-VEE = "\\vee" { return text(); }
-IMPLIES = "\\implies" { return text(); }
-IFF = "\\iff" { return text(); }
-FORALL = "\\forall" { return text(); }
-EXISTS = "\\exists" { return text(); }
-EQUALS = '=' { return createVariable(text()); }
+NEG = "\\neg" { return 'neg' }
+WEDGE = "\\wedge" { return 'wedge' }
+VEE = "\\vee" { return 'vee' }
+IMPLIES = "\\implies" { return 'implies' }
+IFF = "\\iff" { return 'iff' }
+FORALL = "\\forall" { return 'forall'; }
+EXISTS = "\\exists" { return 'exists'; }
+EQUALS = '=' { return createVariable('equals'); }
 OPEN = '('
 CLOSE = ')'
 COMMA = ','
@@ -64,38 +64,38 @@ Formula
 
 Quantifier
   = op:QuantifierOp _ v:Variable _ f:SimpleFormula {
-      return createQuantifier(op === "\\forall" ? "UNIVERSAL" : "EXISTENTIAL", v, f, op, op === "\\forall" ? "∀" : "∃");
+      return createQuantifier(v, f, op);
   }
 
 IffFormula
   = l:ImpliesFormula _ IFF _ r:IffFormula {
-      return createLogicalBinary(l, r, "infix", "\\iff", "↔", 4, "none");
+      return createLogicalBinary(l, r, "iff");
   }
   / ImpliesFormula
 
 ImpliesFormula
   = l:AndFormula _ IMPLIES _ r:ImpliesFormula {
-      return createLogicalBinary(l, r, "infix", "\\implies", "→", 4, "right");
+      return createLogicalBinary(l, r, "implies");
   }
   / AndFormula
 
 AndFormula
   = l:OrFormula tail:(_ WEDGE _ r:OrFormula)* {
       return tail.reduce((result, element) => {
-        return createLogicalBinary(result, element[3], "infix", "\\wedge", "∧", 3, "left");
+        return createLogicalBinary(result, element[3], "wedge");
       }, l);
     }
 
 OrFormula
   = l:SimpleFormula tail:(_ VEE _ r:SimpleFormula)* {
       return tail.reduce((result, element) => {
-        return createLogicalBinary(result, element[3], "infix", "\\vee", "∨", 3, "left");
+        return createLogicalBinary(result, element[3], "vee");
       }, l);
     }
 
 EqualPredicate
   = t1:Term _ i:EQUALS _ t2:Term {
-      return createApplication(i, 2, [t1, t2], "infix");
+      return createApplication(i, 2, [t1, t2]);
   }
 
 Predicate
@@ -103,7 +103,7 @@ Predicate
 
 Negation
   = NEG _ f:SimpleFormula {
-      return createLogicalUnary(f, "prefix", "\\neg", "¬", 0);
+      return createLogicalUnary(f, "neg");
   }
 
 SimpleFormula
@@ -120,7 +120,7 @@ Term
 
 Application
   = i:Variable _ OPEN _ args:TermList _ CLOSE {
-      return createApplication(i, args.length, args, "functional");
+      return createApplication(i, args.length, args);
   }
 
 TermList
