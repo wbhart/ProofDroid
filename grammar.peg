@@ -17,11 +17,32 @@
   }
 
   function createVariable(name) {
-    return { type: "Variable", name: name };
+    return { type: "Variable", name: name, metavar: false, bound: false };
   }
 
   function createTuple(count, terms) {
     return { type: "Tuple", elements: terms.slice(0, count) };
+  }
+
+  // Binds a variable in a formula
+  function bind_var(variable, formula) {
+    function bind(node) {
+      if (node.type === "Variable" && node.name === variable.name) {
+        node.bound = true;
+      } else if (node.type === "Application") {
+        node.arguments.forEach(bind);
+      } else if (node.type === "Tuple") {
+        node.elements.forEach(bind);
+      } else if (node.type === "Quantifier") {
+        bind(node.formula);
+      } else if (node.type === "LogicalUnary") {
+        bind(node.formula);
+      } else if (node.type === "LogicalBinary") {
+        bind(node.left);
+        bind(node.right);
+      }
+    }
+    bind(formula);
   }
 }
 
@@ -36,7 +57,7 @@ EOL
   = '\n' / '\r' / '\r\n'
 
 Variable
-  = [A-Za-z] [a-zA-Z0-9]* { return createVariable(text()); }
+  = [a-zA-Z] [a-zA-Z0-9]* { return createVariable(text()); }
 
 QuantifierOp
   = FORALL
@@ -64,6 +85,7 @@ Formula
 
 Quantifier
   = op:QuantifierOp _ v:Variable _ f:SimpleFormula {
+      bind_var(v, f);
       return createQuantifier(v, f, op);
   }
 
@@ -106,11 +128,15 @@ Negation
       return createLogicalUnary(f, "neg");
   }
 
+Metavariable
+  = v:Variable { v.matavar = true; return v; }
+  
 SimpleFormula
   = Quantifier
   / EqualPredicate
   / Predicate
   / Negation
+  / Metavariable
   / OPEN _ f:Formula _ CLOSE { return f; }
 
 Term

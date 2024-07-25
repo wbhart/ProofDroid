@@ -85,12 +85,12 @@ function str_polish(node) {
 }
 
 function parenthesize(parent, child, stringFunc, childPosition) {
-  const parentInfo = getPrecedenceInfo(parent.name);
-  const childInfo = getPrecedenceInfo(child.name);
-  
   if (child.type === "Variable" || child.type === "Application" || child.type === "Tuple") {
     return stringFunc(child);
   }
+
+  const parentInfo = getPrecedenceInfo(parent.name);
+  const childInfo = getPrecedenceInfo(child.name);
 
   if (childInfo.precedence < parentInfo.precedence) {
     return stringFunc(child);

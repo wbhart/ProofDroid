@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Proof Droid -- v0.1</title>
-    <STYLE type="text/css">
-     H1.header {text-align: center}
-    </STYLE>
+    <style type="text/css">
+        H1.header { text-align: center }
+    </style>
 </head>
 <body>
     <h1 class="header">Proof Droid -- ver 0.1</h1>
@@ -14,60 +14,104 @@
     <p><b>Latex:</b> <pre id="str-repr"></pre></p>
     <p><b>Unicode:</b> <pre id="str-unicode"></pre></p>
     <p><b>Polish:</b> <pre id="str-polish"></pre></p>
-    <p id="status"></p>
+    <p id="status">Edit Mode: Type your formulas and click outside the text box to save.</p>
 
-    <!-- Include the generated parser and string functions -->
     <script type="module">
         import { parse } from './parser.js';
         import { str_repr, str_unicode, str_polish } from './strings.js';
+        import { modus_ponens } from './moves.js';
+        import { initializeContext, getContext, updateContext } from './context.js';
+        import { getCurrentLine, getCaretPosition } from './interface_helper.js';
 
-        function getCaretPosition(ctrl) {
-            var caretPos = 0;
-            if (document.selection) {
-                ctrl.focus();
-                var sel = document.selection.createRange();
-                sel.moveStart('character', -ctrl.value.length);
-                caretPos = sel.text.length;
-            } else if (ctrl.selectionStart || ctrl.selectionStart === '0') {
-                caretPos = ctrl.selectionStart;
-            }
-            return caretPos;
+        let state = 'edit';
+        let selectedLine1 = null;
+        let context = initializeContext();
+
+        const inputField = document.getElementById('inputField');
+        const statusField = document.getElementById('status');
+
+        function updateStatus(message) {
+            statusField.innerText = message;
         }
 
-        function getCurrentLine(textarea) {
-            const caretPosition = getCaretPosition(textarea);
-            const text = textarea.value;
-            const lines = text.split('\n');
-            let currentLine = 0;
-            let charCount = 0;
+        function updateTextAreaWithRepr() {
+            inputField.value = context.formulas.map(f => str_repr(f)).join('\n');
+        }
 
-            for (let i = 0; i < lines.length; i++) {
-                charCount += lines[i].length + 1; // +1 for the newline character
-                if (charCount > caretPosition) {
-                    currentLine = i;
-                    break;
+        function updateTextAreaWithUnicode() {
+            inputField.value = context.formulas.map(f => str_unicode(f)).join('\n');
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'e' && state === 'initial') {
+                state = 'edit';
+                inputField.disabled = false;
+                inputField.placeholder = 'Enter text to parse';
+                updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
+                updateTextAreaWithRepr();
+            } else if (event.key === 'm' && state === 'initial' && context.formulas.length > 0) {
+                state = 'manual';
+                updateStatus('Manual Mode: Press \'p\' to perform Modus Ponens.');
+            } else if (event.key === 'p' && state === 'manual') {
+                state = 'modus_ponens';
+                inputField.disabled = false;
+                updateStatus('Modus Ponens Mode: Click on an implication, then an antecedent.');
+            } else if (event.key === 'Escape') {
+                state = 'initial';
+                selectedLine1 = null;
+                inputField.disabled = true;
+                updateTextAreaWithUnicode();
+                updateStatus('Press \'e\' to enter edit mode. Press \'m\' for manual mode.');
+            }
+        });
+
+        inputField.addEventListener('blur', () => {
+            if (state === 'edit') {
+                const lines = inputField.value.split('\n');
+                const newContext = initializeContext();
+                newContext.formulas = [];
+
+                for (let i = 0; i < lines.length; i++) {
+                    try {
+                        const formula = parse(lines[i]);
+                        newContext.formulas.push(formula);
+                    } catch (e) {
+                        if (e.name === 'SyntaxError') {
+                            updateStatus(`Syntax Error on line ${i + 1}: ${e.message}`);
+                            return;
+                        }
+                    }
                 }
-            }
-            return lines[currentLine];
-        }
 
-        document.getElementById('inputField').addEventListener('input', () => {
-            const inputField = document.getElementById('inputField');
+                updateContext(newContext);
+                context = newContext;
+                updateTextAreaWithUnicode();
+                state = 'initial';
+                inputField.disabled = true;
+                updateStatus('Press \'e\' to enter edit mode. Press \'m\' for manual mode.');
+            }
+        });
+
+        inputField.addEventListener('input', (event) => {
+            if (state !== 'edit') {
+                event.preventDefault();
+                return false;
+            }
+
             const currentLine = getCurrentLine(inputField);
-            const statusField = document.getElementById('status');
             const strReprField = document.getElementById('str-repr');
             const strUnicodeField = document.getElementById('str-unicode');
             const strPolishField = document.getElementById('str-polish');
 
             try {
                 const result = parse(currentLine);
-                statusField.innerText = '';
+                updateStatus('');
                 strReprField.innerText = str_repr(result);
                 strUnicodeField.innerText = str_unicode(result);
                 strPolishField.innerText = str_polish(result);
             } catch (e) {
-                if (e.name === 'SyntaxError') {
-                    statusField.innerText = `Syntax Error: ${e.message}`;
+                if (state === 'edit' && e.name === 'SyntaxError') {
+                    updateStatus(`Syntax Error: ${e.message}`);
                 } else {
                     throw e; // Re-throw the exception for other types of errors
                 }
@@ -76,8 +120,45 @@
                 strPolishField.innerText = '';
             }
         });
+
+        inputField.addEventListener('click', (event) => {
+            if (state === 'modus_ponens') {
+                const lines = inputField.value.split('\n');
+                const clickedLine = getCurrentLine(inputField);
+                const selectedIndex = lines.indexOf(clickedLine);
+
+                if (selectedLine1 === null) {
+                    const formula1 = context.formulas[selectedIndex];
+                    if (formula1.type === 'LogicalBinary' && formula1.name === 'implies') {
+                        selectedLine1 = selectedIndex;
+                        updateStatus('Modus Ponens Mode: Click on an antecedent.');
+                    } else {
+                        updateStatus('Error: Selected line is not an implication.');
+                    }
+                } else {
+                    const formula1 = context.formulas[selectedLine1];
+                    const formula2 = context.formulas[selectedIndex];
+
+                    const result = modus_ponens(formula1, formula2);
+                    if (result) {
+                        context.formulas.push(result);
+                        updateTextAreaWithUnicode();
+                        updateStatus('Modus Ponens applied successfully.');
+                    } else {
+                        updateStatus('Modus Ponens failed.');
+                    }
+
+                    updateContext(context);
+                    selectedLine1 = null;
+                    state = 'initial';
+                    inputField.disabled = true;
+                }
+            }
+        });
+
+        // Start the program in edit mode
+        inputField.disabled = false;
+        updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
     </script>
 </body>
 </html>
-
-
