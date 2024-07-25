@@ -5,20 +5,37 @@
     <title>Proof Droid -- v0.1</title>
     <style type="text/css">
         H1.header { text-align: center }
+        .output-heading { font-size: 1.2em; }
+        .mathjax-container { font-size: 0.8em; }
     </style>
+    <!-- Include MathJax -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
     <h1 class="header">Proof Droid -- ver 0.1</h1>
     <textarea id="inputField" placeholder="Enter text to parse" rows="15" cols="72"></textarea><img src="droid.png" width="280ex">
-    <h2>String Representations</h2>
+    <h2 class="output-heading">String Representations</h2>
     <p><b>Latex:</b> <pre id="str-repr"></pre></p>
     <p><b>Unicode:</b> <pre id="str-unicode"></pre></p>
     <p><b>Polish:</b> <pre id="str-polish"></pre></p>
+    <p><b>MathJax:</b></p>
+    <div id="mathjax-container" class="mathjax-container"></div>
     <p id="status">Edit Mode: Type your formulas and click outside the text box to save.</p>
 
     <script type="module">
         import { parse } from './parser.js';
-        import { str_repr, str_unicode, str_polish } from './strings.js';
+        import { str_repr, str_unicode, str_polish, str_mathjax } from './strings.js';
         import { modus_ponens } from './moves.js';
         import { initializeContext, getContext, updateContext } from './context.js';
         import { getCurrentLine, getCaretPosition } from './interface_helper.js';
@@ -29,6 +46,10 @@
 
         const inputField = document.getElementById('inputField');
         const statusField = document.getElementById('status');
+        const strReprField = document.getElementById('str-repr');
+        const strUnicodeField = document.getElementById('str-unicode');
+        const strPolishField = document.getElementById('str-polish');
+        const mathjaxContainer = document.getElementById('mathjax-container');
 
         function updateStatus(message) {
             statusField.innerText = message;
@@ -40,6 +61,11 @@
 
         function updateTextAreaWithUnicode() {
             inputField.value = context.formulas.map(f => str_unicode(f)).join('\n');
+        }
+
+        function updateMathJax() {
+            mathjaxContainer.innerHTML = context.formulas.map(f => `$${str_mathjax(f)}$`).join('<br>');
+            MathJax.typesetPromise();
         }
 
         document.addEventListener('keydown', (event) => {
@@ -61,6 +87,7 @@
                 selectedLine1 = null;
                 inputField.disabled = true;
                 updateTextAreaWithUnicode();
+                updateMathJax();
                 updateStatus('Press \'e\' to enter edit mode. Press \'m\' for manual mode.');
             }
         });
@@ -86,6 +113,7 @@
                 updateContext(newContext);
                 context = newContext;
                 updateTextAreaWithUnicode();
+                updateMathJax();
                 state = 'initial';
                 inputField.disabled = true;
                 updateStatus('Press \'e\' to enter edit mode. Press \'m\' for manual mode.');
@@ -99,9 +127,6 @@
             }
 
             const currentLine = getCurrentLine(inputField);
-            const strReprField = document.getElementById('str-repr');
-            const strUnicodeField = document.getElementById('str-unicode');
-            const strPolishField = document.getElementById('str-polish');
 
             try {
                 const result = parse(currentLine);
@@ -109,15 +134,18 @@
                 strReprField.innerText = str_repr(result);
                 strUnicodeField.innerText = str_unicode(result);
                 strPolishField.innerText = str_polish(result);
+                mathjaxContainer.innerHTML = `$${str_mathjax(result)}$`;
+                MathJax.typesetPromise();
             } catch (e) {
                 if (state === 'edit' && e.name === 'SyntaxError') {
                     updateStatus(`Syntax Error: ${e.message}`);
+                    strReprField.innerText = '';
+                    strUnicodeField.innerText = '';
+                    strPolishField.innerText = '';
+                    mathjaxContainer.innerHTML = '';
                 } else {
                     throw e; // Re-throw the exception for other types of errors
                 }
-                strReprField.innerText = '';
-                strUnicodeField.innerText = '';
-                strPolishField.innerText = '';
             }
         });
 
@@ -143,6 +171,7 @@
                     if (result) {
                         context.formulas.push(result);
                         updateTextAreaWithUnicode();
+                        updateMathJax();
                         updateStatus('Modus Ponens applied successfully.');
                     } else {
                         updateStatus('Modus Ponens failed.');

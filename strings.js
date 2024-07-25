@@ -84,6 +84,34 @@ function str_polish(node) {
   }
 }
 
+function str_mathjax(node) {
+  switch (node.type) {
+    case "Variable":
+      const { mathjax = node.name } = getPrecedenceInfo(node.name);
+      return mathjax;
+    case "Application":
+      const { fixity = 'functional' } = getPrecedenceInfo(node.symbol.name);
+      if (fixity === "functional") {
+        return `${str_mathjax(node.symbol)}\\left(${node.arguments.map(arg => str_mathjax(arg)).join(", ")}\\right)`;
+      } else {
+        return `${node.arguments.map(arg => str_mathjax(arg)).join(` ${str_mathjax(node.symbol)} `)}`;
+      }
+    case "Tuple":
+      return `\\left(${node.elements.map(element => str_mathjax(element)).join(", ")}\\right)`;
+    case "LogicalUnary":
+      const unaryInfo = getPrecedenceInfo(node.name);
+      return `${unaryInfo.mathjax} ${parenthesize(node, node.formula, str_mathjax, true)}`;
+    case "Quantifier":
+      const quantifierInfo = getPrecedenceInfo(node.name);
+      return `${quantifierInfo.mathjax} ${str_mathjax(node.variable)} \\left(${str_mathjax(node.formula)}\\right)`;
+    case "LogicalBinary":
+      const binaryInfo = getPrecedenceInfo(node.name);
+      return `${parenthesize(node, node.left, str_mathjax, false, 'left')} ${binaryInfo.mathjax} ${parenthesize(node, node.right, str_mathjax, false, 'right')}`;
+    default:
+      throw new Error(`Unknown node type: ${node.type}`);
+  }
+}
+
 function parenthesize(parent, child, stringFunc, childPosition) {
   if (child.type === "Variable" || child.type === "Application" || child.type === "Tuple") {
     return stringFunc(child);
@@ -122,5 +150,6 @@ function parenthesize(parent, child, stringFunc, childPosition) {
 export {
   str_repr,
   str_unicode,
-  str_polish
+  str_polish,
+  str_mathjax
 };
