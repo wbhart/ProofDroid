@@ -7,6 +7,9 @@
         H1.header { text-align: center }
         .output-heading { font-size: 1.2em; }
         .mathjax-container { font-size: 0.8em; }
+        #fileList {
+            list-style-type: none;
+        }
     </style>
     <!-- Include MathJax -->
     <script>
@@ -32,6 +35,11 @@
     <p><b>MathJax:</b></p>
     <div id="mathjax-container" class="mathjax-container"></div>
     <p id="status">Edit Mode: Type your formulas and click outside the text box to save.</p>
+
+    <h1>List of JSON Files</h1>
+    <ul id="fileList"></ul>
+
+    <script src="list_files.js"></script>
 
     <script type="module">
         import { parse } from './parser.js';

@@ -1,0 +1,9 @@
+{
+  "system": "Łukasiewicz P2",
+  "axioms": [
+    "p \\implies (q \\implies p)",
+    "(p \\implies (q \\implies r)) \\implies ((p \\implies q) \\implies (p \\implies r))",
+    "(\\neg p \\implies \\neg q) \\implies (q \\implies p)"
+  ]
+}
+
