@@ -1,4 +1,4 @@
-export async function listFiles(directory) {
+async function listFiles(directory) {
     const apiURL = `https://api.github.com/repos/wbhart/ProofDroid/contents/${directory}`;
 
     const response = await fetch(apiURL);
@@ -10,4 +10,6 @@ export async function listFiles(directory) {
 
     return data.filter(item => item.name.endsWith('.json')).map(item => item.name);
 }
+
+export { listFiles };
 
