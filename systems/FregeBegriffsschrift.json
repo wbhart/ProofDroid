@@ -1,0 +1,12 @@
+{
+  "system": "Frege Sentential Logic",
+  "axioms": [
+    "a \\implies (b \\implies a)",
+    "(c \\implies (b \\implies a)) \\implies ((c \\implies b) \\implies (c \\implies a))",
+    "(d \\implies (b \\implies a)) \\implies (b \implies (d \\implies a))",
+    "(b \\implies a) \\implies (\\neg a \\implies \\neg b)",
+    "\\neg \\neg a \implies a",
+    "a \implies \\neg \\neg a"
+  ]
+}
+

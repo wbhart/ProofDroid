@@ -1,0 +1,10 @@
+{
+  "system": "Łukasiewicz CN",
+  "axioms": [
+    "(u \\implies (y \\implies (x \\implies z))) \\implies ((x \\implies u) \\implies (y \\implies (x \\implies z)))",
+    "(x \\implies y) \\implies ((y \\implies z) \\implies (x \\implies z))",
+    "(\\neg x \\implies x) \\implies x",
+    "x \\implies (\\neg x \\implies y)"
+  ]
+}
+
