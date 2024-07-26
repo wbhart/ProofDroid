@@ -129,7 +129,7 @@ Negation
   }
 
 Metavariable
-  = v:Variable { v.matavar = true; return v; }
+  = v:Variable { v.metavar = true; return v; }
   
 SimpleFormula
   = Quantifier

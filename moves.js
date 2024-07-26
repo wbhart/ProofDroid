@@ -1,5 +1,7 @@
+// moves.js
 import { unify } from './unify.js';
 import { is_term, vars_used, vars_rename, lists_merge, deep_copy } from './node_helper.js';
+import { str_unicode } from './strings.js';
 
 // Helper function to get the intersection of two arrays
 function intersect(arr1, arr2) {
@@ -10,19 +12,34 @@ function intersect(arr1, arr2) {
 function substitution(formula, subst) {
   function applySubst(node) {
     if (node.type === 'Variable' && subst[node.name]) {
-      return subst[node.name];
+      return applySubst(subst[node.name]);
     } else if (node.type === 'Application') {
-      node.arguments = node.arguments.map(arg => applySubst(arg));
+      return {
+        ...node,
+        arguments: node.arguments.map(arg => applySubst(arg))
+      };
     } else if (node.type === 'Tuple') {
-      node.elements = node.elements.map(element => applySubst(element));
+      return {
+        ...node,
+        elements: node.elements.map(element => applySubst(element))
+      };
     } else if (node.type === 'Quantifier') {
-      node.variable = applySubst(node.variable);
-      node.formula = applySubst(node.formula);
+      return {
+        ...node,
+        variable: applySubst(node.variable),
+        formula: applySubst(node.formula)
+      };
     } else if (node.type === 'LogicalUnary') {
-      node.formula = applySubst(node.formula);
+      return {
+        ...node,
+        formula: applySubst(node.formula)
+      };
     } else if (node.type === 'LogicalBinary') {
-      node.left = applySubst(node.left);
-      node.right = applySubst(node.right);
+      return {
+        ...node,
+        left: applySubst(node.left),
+        right: applySubst(node.right)
+      };
     }
     return node;
   }
@@ -71,4 +88,3 @@ function modus_ponens(implication, formula) {
 }
 
 export { modus_ponens, substitution };
-

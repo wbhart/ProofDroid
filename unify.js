@@ -18,6 +18,9 @@ function unify(x, y, subst = {}) {
       return unify_lists(x.arguments, y.arguments, subst);
     } else if (x.type === "Tuple" && x.elements.length === y.elements.length) {
       return unify_lists(x.elements, y.elements, subst);
+    } else if (x.type === "LogicalBinary" && x.name === y.name) {
+      const leftUnify = unify(x.left, y.left, subst);
+      return leftUnify !== null ? unify(x.right, y.right, leftUnify) : null;
     }
   }
   return null;
@@ -58,10 +61,9 @@ function unify_metavar(mv, x, subst) {
 
 // Extend the substitution
 function extend_subst(v, x, subst) {
-  const newSubst = Object.assign({}, subst);
+  const newSubst = { ...subst };
   newSubst[v.name] = x;
   return newSubst;
 }
 
 export { unify, is_term };
-

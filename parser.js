@@ -250,7 +250,7 @@ function peg$parse(input, options) {
   var peg$f16 = function(f) {
       return createLogicalUnary(f, "neg");
   };
-  var peg$f17 = function(v) { v.matavar = true; return v; };
+  var peg$f17 = function(v) { v.metavar = true; return v; };
   var peg$f18 = function(f) { return f; };
   var peg$f19 = function(i, args) {
       return createApplication(i, args.length, args);
