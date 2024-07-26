@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <metacharset="UTF-8">
     <title>Proof Droid -- v0.1</title>
     <style type="text/css">
-        H1.header { text-align: center }
+        H1.header { text-align: center; }
         .output-heading { font-size: 1.2em; }
         .mathjax-container { font-size: 0.8em; }
     </style>
@@ -134,6 +134,7 @@
                 displayManualPrompt();
             } else if (event.key === 'p' && state === 'manual') {
                 state = 'modus_ponens';
+                selectedLine1 = null;
                 inputField.disabled = false;
                 updateStatus('Modus Ponens Mode: Click on an implication, then an antecedent.');
             } else if (event.key === 'l' && state === 'initial') {
@@ -193,7 +194,7 @@
                 strPolishField.innerText = str_polish(result);
                 updateMathJax(result);
             } catch (e) {
-                if (state === 'edit' && e.name === 'SyntaxError') {
+                if (e.name === 'SyntaxError') {
                     updateStatus(`Syntax Error: ${e.message}`);
                     strReprField.innerText = '';
                     strUnicodeField.innerText = '';
@@ -234,6 +235,7 @@
                         context.formulas.push(result);
                         updateTextAreaWithUnicode();
                         updateMathJax();
+                        state = 'manual';
                         displayManualPrompt();
                     } else {
                         updateStatus('Modus Ponens failed. Press Enter to continue.');
@@ -246,6 +248,7 @@
                     }
 
                     updateContext(context);
+                    inputField.disabled = true;
                 }
             }
         });
