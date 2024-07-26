@@ -1,12 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <metacharset="UTF-8">
+    <meta charset="UTF-8">
     <title>Proof Droid -- v0.1</title>
     <style type="text/css">
-        H1.header { text-align: center; }
-        .output-heading { font-size: 1.2em; }
-        .mathjax-container { font-size: 0.8em; }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1.header {
+            text-align: center;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .content {
+            display: flex;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .left-column, .middle-column, .right-column {
+            padding: 10px;
+        }
+        .left-column, .right-column {
+            width: 40%;
+        }
+        .middle-column {
+            width: 20%;
+            text-align: center;
+        }
+        .status-bar {
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-top: 1px solid #ccc;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+        }
+        textarea {
+            width: 100%;
+            height: calc(100vh - 300px); /* Adjust height to fit within the viewport */
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        #systemSelector {
+            display: block;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .scrollable-content {
+            max-height: calc(100vh - 250px); /* Adjust height to fit within the viewport */
+            overflow-y: auto;
+        }
     </style>
     <!-- Include MathJax -->
     <script>
@@ -24,18 +75,22 @@
 </head>
 <body>
     <h1 class="header">Proof Droid -- ver 0.1</h1>
-    <textarea id="inputField" placeholder="Enter text to parse" rows="15" cols="72"></textarea>
-    <img src="droid.png" width="280ex">
-    <select id="systemSelector" style="display:none;">
-        <option value="" disabled selected>Select a system</option>
-    </select>
-    <h2 class="output-heading">String Representations</h2>
-    <p><b>Latex:</b> <pre id="str-repr"></pre></p>
-    <p><b>Unicode:</b> <pre id="str-unicode"></pre></p>
-    <p><b>Polish:</b> <pre id="str-polish"></pre></p>
-    <p><b>MathJax:</b></p>
-    <div id="mathjax-container" class="mathjax-container"></div>
-    <p id="status">Press 'e' to enter edit mode. Press 'm' for manual mode. Press 'l' to list systems.</p>
+    <div class="content">
+        <div class="left-column">
+            <textarea id="inputField" placeholder="Enter text to parse"></textarea>
+            <select id="systemSelector" style="display:none;"></select>
+        </div>
+        <div class="middle-column">
+            <img src="droid.png" alt="Droid Image">
+        </div>
+        <div class="right-column" id="right-column">
+            <h2 id="right-column-title">Welcome</h2>
+            <div id="right-column-content" class="scrollable-content">
+                <p>Proof Droid is a program for proving theorems in various formal systems.</p>
+            </div>
+        </div>
+    </div>
+    <div class="status-bar" id="status">Press 'e' to enter edit mode. Press 'm' for manual mode. Press 'l' to list systems.</div>
 
     <script type="module">
         import { parse } from './parser.js';
@@ -51,10 +106,8 @@
 
         const inputField = document.getElementById('inputField');
         const statusField = document.getElementById('status');
-        const strReprField = document.getElementById('str-repr');
-        const strUnicodeField = document.getElementById('str-unicode');
-        const strPolishField = document.getElementById('str-polish');
-        const mathjaxContainer = document.getElementById('mathjax-container');
+        const rightColumnTitle = document.getElementById('right-column-title');
+        const rightColumnContent = document.getElementById('right-column-content');
         const systemSelector = document.getElementById('systemSelector');
 
         function updateStatus(message) {
@@ -71,10 +124,8 @@
 
         function updateMathJax(formula) {
             if (formula) {
-                mathjaxContainer.innerHTML = `$${str_mathjax(formula)}$`;
+                updateStatus(`Successfully parsed: $${str_mathjax(formula)}$`);
                 MathJax.typesetPromise();
-            } else {
-                mathjaxContainer.innerHTML = '';
             }
         }
 
@@ -106,10 +157,44 @@
 
         function displayInitialPrompt() {
             updateStatus('Press \'e\' to enter edit mode. Press \'m\' for manual mode. Press \'l\' to list systems.');
+            rightColumnTitle.innerText = 'Welcome';
+            rightColumnContent.innerHTML = '<p>Proof Droid is a program for proving theorems in various formal systems.</p>';
+        }
+
+        function displayEditModeHelp() {
+            rightColumnTitle.innerText = 'Edit Mode';
+            rightColumnContent.innerHTML = `
+                <p>In edit mode, you can use the following LaTeX input symbols:</p>
+                <ul>
+                    <li>\\forall: ∀ (forall)</li>
+                    <li>\\exists: ∃ (exists)</li>
+                    <li>\\wedge: ∧ (and)</li>
+                    <li>\\vee: ∨ (or)</li>
+                    <li>\\neg: ¬ (not)</li>
+                    <li>\\implies: → (implies)</li>
+                    <li>\\iff: ↔ (iff)</li>
+                    <li>=: = (equals)</li>
+                </ul>
+                <p><b>Terms:</b></p>
+                <ul>
+                    <li><b>Variable:</b> Single letter identifiers (e.g., x, y, z)</li>
+                    <li><b>Function:</b> f(t1, t2, ..., tn), where t1, ..., tn are terms</li>
+                </ul>
+                <p><b>Formulas:</b></p>
+                <ul>
+                    <li><b>Equals:</b> t1 = t2 for terms t1 and t2</li>
+                    <li><b>Logical Connectives:</b> ¬F, F ∧ G, F ∨ G, F → G, F ↔ G for formulas F and G</li>
+                    <li><b>Quantifiers:</b> ∀ x (F), ∃ x (F) for variable x and formula F</li>
+                    <li><b>Metavariable:</b> Single letter identifiers (e.g. p, q, r) at the formula level</li>
+                </ul>
+                <p>Press ESC to exit edit mode.</p>
+            `;
         }
 
         function displayManualPrompt() {
             updateStatus('Manual Mode: Press \'p\' to perform Modus Ponens. Press ESC to exit manual mode.');
+            rightColumnTitle.innerText = 'Manual Mode';
+            rightColumnContent.innerHTML = '<p>In manual mode, you can perform Modus Ponens by pressing \'p\' and then selecting the implication and antecedent lines. Press ESC to exit manual mode.</p>';
         }
 
         function waitForEnter(callback) {
@@ -129,6 +214,7 @@
                 inputField.placeholder = 'Enter text to parse';
                 updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
                 updateTextAreaWithRepr();
+                displayEditModeHelp();
             } else if (event.key === 'm' && state === 'initial' && context.formulas.length > 0) {
                 state = 'manual';
                 displayManualPrompt();
@@ -145,7 +231,6 @@
                 inputField.disabled = true;
                 systemSelector.style.display = 'none';
                 updateTextAreaWithUnicode();
-                updateMathJax();
                 displayInitialPrompt();
             }
         });
@@ -157,9 +242,14 @@
                 newContext.formulas = [];
 
                 for (let i = 0; i < lines.length; i++) {
+                    const trimmedLine = lines[i].trim();
+                    if (trimmedLine === '') {
+                        continue; // Skip empty lines
+                    }
                     try {
-                        const formula = parse(lines[i]);
+                        const formula = parse(trimmedLine);
                         newContext.formulas.push(formula);
+                        updateMathJax(formula);
                     } catch (e) {
                         if (e.name === 'SyntaxError') {
                             updateStatus(`Syntax Error on line ${i + 1}: ${e.message}`);
@@ -171,7 +261,6 @@
                 updateContext(newContext);
                 context = newContext;
                 updateTextAreaWithUnicode();
-                updateMathJax();
                 state = 'initial';
                 inputField.disabled = true;
                 displayInitialPrompt();
@@ -184,22 +273,19 @@
                 return false;
             }
 
-            const currentLine = getCurrentLine(inputField);
+            const currentLine = getCurrentLine(inputField).trim();
+            if (currentLine === '') {
+                updateStatus('');
+                return;
+            }
 
             try {
                 const result = parse(currentLine);
                 updateStatus('');
-                strReprField.innerText = str_repr(result);
-                strUnicodeField.innerText = str_unicode(result);
-                strPolishField.innerText = str_polish(result);
                 updateMathJax(result);
             } catch (e) {
                 if (e.name === 'SyntaxError') {
                     updateStatus(`Syntax Error: ${e.message}`);
-                    strReprField.innerText = '';
-                    strUnicodeField.innerText = '';
-                    strPolishField.innerText = '';
-                    mathjaxContainer.innerHTML = '';
                 } else {
                     throw e; // Re-throw the exception for other types of errors
                 }
@@ -209,7 +295,7 @@
         inputField.addEventListener('click', (event) => {
             if (state === 'modus_ponens') {
                 const lines = inputField.value.split('\n');
-                const clickedLine = getCurrentLine(inputField);
+                const clickedLine = getCurrentLine(inputField).trim();
                 const selectedIndex = lines.indexOf(clickedLine);
 
                 if (selectedLine1 === null) {
@@ -234,7 +320,6 @@
                     if (result) {
                         context.formulas.push(result);
                         updateTextAreaWithUnicode();
-                        updateMathJax();
                         state = 'manual';
                         displayManualPrompt();
                     } else {
@@ -265,7 +350,6 @@
                 updateContext(newContext);
                 context = newContext;
                 updateTextAreaWithUnicode();
-                updateMathJax();
                 state = 'initial';
                 systemSelector.style.display = 'none';
                 displayInitialPrompt();
