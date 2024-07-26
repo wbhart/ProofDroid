@@ -7,9 +7,6 @@
         H1.header { text-align: center }
         .output-heading { font-size: 1.2em; }
         .mathjax-container { font-size: 0.8em; }
-        #fileList {
-            list-style-type: none;
-        }
     </style>
     <!-- Include MathJax -->
     <script>
@@ -27,19 +24,18 @@
 </head>
 <body>
     <h1 class="header">Proof Droid -- ver 0.1</h1>
-    <textarea id="inputField" placeholder="Enter text to parse" rows="15" cols="72"></textarea><img src="droid.png" width="280ex">
+    <textarea id="inputField" placeholder="Enter text to parse" rows="15" cols="72"></textarea>
+    <img src="droid.png" width="280ex">
+    <select id="systemSelector" style="display:none;">
+        <option value="" disabled selected>Select a system</option>
+    </select>
     <h2 class="output-heading">String Representations</h2>
     <p><b>Latex:</b> <pre id="str-repr"></pre></p>
     <p><b>Unicode:</b> <pre id="str-unicode"></pre></p>
     <p><b>Polish:</b> <pre id="str-polish"></pre></p>
     <p><b>MathJax:</b></p>
     <div id="mathjax-container" class="mathjax-container"></div>
-    <p id="status">Edit Mode: Type your formulas and click outside the text box to save.</p>
-
-    <h1>List of JSON Files</h1>
-    <ul id="fileList"></ul>
-
-    <script src="list_files.js"></script>
+    <p id="status">Press 'e' to enter edit mode. Press 'm' for manual mode. Press 'l' to list systems.</p>
 
     <script type="module">
         import { parse } from './parser.js';
@@ -47,8 +43,9 @@
         import { modus_ponens } from './moves.js';
         import { initializeContext, getContext, updateContext } from './context.js';
         import { getCurrentLine, getCaretPosition } from './interface_helper.js';
+        import { listFiles } from './list_files.js';
 
-        let state = 'edit';
+        let state = 'initial';
         let selectedLine1 = null;
         let context = initializeContext();
 
@@ -58,6 +55,7 @@
         const strUnicodeField = document.getElementById('str-unicode');
         const strPolishField = document.getElementById('str-polish');
         const mathjaxContainer = document.getElementById('mathjax-container');
+        const systemSelector = document.getElementById('systemSelector');
 
         function updateStatus(message) {
             statusField.innerText = message;
@@ -71,12 +69,60 @@
             inputField.value = context.formulas.map(f => str_unicode(f)).join('\n');
         }
 
-        function updateMathJax() {
-            mathjaxContainer.innerHTML = context.formulas.map(f => `$${str_mathjax(f)}$`).join('<br>');
-            MathJax.typesetPromise();
+        function updateMathJax(formula) {
+            if (formula) {
+                mathjaxContainer.innerHTML = `$${str_mathjax(formula)}$`;
+                MathJax.typesetPromise();
+            } else {
+                mathjaxContainer.innerHTML = '';
+            }
         }
 
-        document.addEventListener('keydown', (event) => {
+        function fetchSystemData(fileName) {
+            return fetch(`systems/${fileName}`)
+                .then(response => response.json());
+        }
+
+        async function loadSystemSelector() {
+            state = 'list_systems';
+            updateStatus('List Systems Mode: Loading systems...');
+            try {
+                const files = await listFiles('systems');
+                const systems = [];
+                for (const file of files) {
+                    const data = await fetchSystemData(file);
+                    systems.push({ name: data.system, file });
+                }
+                systemSelector.innerHTML = '<option value="" disabled selected>Select a system</option>' + 
+                                            systems.map(system => `<option value="${system.file}">${system.name}</option>`).join('');
+                systemSelector.style.display = 'block';
+                updateStatus('Select a system from the dropdown list.');
+            } catch (error) {
+                updateStatus(`Error loading systems: ${error.message}`);
+                state = 'initial';
+                displayInitialPrompt();
+            }
+        }
+
+        function displayInitialPrompt() {
+            updateStatus('Press \'e\' to enter edit mode. Press \'m\' for manual mode. Press \'l\' to list systems.');
+        }
+
+        function displayManualPrompt() {
+            updateStatus('Manual Mode: Press \'p\' to perform Modus Ponens. Press ESC to exit manual mode.');
+        }
+
+        function waitForEnter(callback) {
+            function handler(event) {
+                if (event.key === 'Enter') {
+                    document.removeEventListener('keydown', handler);
+                    callback();
+                }
+            }
+            document.addEventListener('keydown', handler);
+        }
+
+        document.addEventListener('keydown', async (event) => {
             if (event.key === 'e' && state === 'initial') {
                 state = 'edit';
                 inputField.disabled = false;
@@ -85,18 +131,21 @@
                 updateTextAreaWithRepr();
             } else if (event.key === 'm' && state === 'initial' && context.formulas.length > 0) {
                 state = 'manual';
-                updateStatus('Manual Mode: Press \'p\' to perform Modus Ponens.');
+                displayManualPrompt();
             } else if (event.key === 'p' && state === 'manual') {
                 state = 'modus_ponens';
                 inputField.disabled = false;
                 updateStatus('Modus Ponens Mode: Click on an implication, then an antecedent.');
+            } else if (event.key === 'l' && state === 'initial') {
+                await loadSystemSelector();
             } else if (event.key === 'Escape') {
                 state = 'initial';
                 selectedLine1 = null;
                 inputField.disabled = true;
+                systemSelector.style.display = 'none';
                 updateTextAreaWithUnicode();
                 updateMathJax();
-                updateStatus('Press \'e\' to enter edit mode. Press \'m\' for manual mode.');
+                displayInitialPrompt();
             }
         });
 
@@ -124,7 +173,7 @@
                 updateMathJax();
                 state = 'initial';
                 inputField.disabled = true;
-                updateStatus('Press \'e\' to enter edit mode. Press \'m\' for manual mode.');
+                displayInitialPrompt();
             }
         });
 
@@ -142,8 +191,7 @@
                 strReprField.innerText = str_repr(result);
                 strUnicodeField.innerText = str_unicode(result);
                 strPolishField.innerText = str_polish(result);
-                mathjaxContainer.innerHTML = `$${str_mathjax(result)}$`;
-                MathJax.typesetPromise();
+                updateMathJax(result);
             } catch (e) {
                 if (state === 'edit' && e.name === 'SyntaxError') {
                     updateStatus(`Syntax Error: ${e.message}`);
@@ -169,7 +217,13 @@
                         selectedLine1 = selectedIndex;
                         updateStatus('Modus Ponens Mode: Click on an antecedent.');
                     } else {
-                        updateStatus('Error: Selected line is not an implication.');
+                        updateStatus('Error: Selected line is not an implication. Press Enter to continue.');
+                        waitForEnter(() => {
+                            selectedLine1 = null;
+                            state = 'manual';
+                            inputField.disabled = true;
+                            displayManualPrompt();
+                        });
                     }
                 } else {
                     const formula1 = context.formulas[selectedLine1];
@@ -180,22 +234,46 @@
                         context.formulas.push(result);
                         updateTextAreaWithUnicode();
                         updateMathJax();
-                        updateStatus('Modus Ponens applied successfully.');
+                        displayManualPrompt();
                     } else {
-                        updateStatus('Modus Ponens failed.');
+                        updateStatus('Modus Ponens failed. Press Enter to continue.');
+                        waitForEnter(() => {
+                            selectedLine1 = null;
+                            state = 'manual';
+                            inputField.disabled = true;
+                            displayManualPrompt();
+                        });
                     }
 
                     updateContext(context);
-                    selectedLine1 = null;
-                    state = 'initial';
-                    inputField.disabled = true;
                 }
             }
         });
 
-        // Start the program in edit mode
-        inputField.disabled = false;
-        updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
+        systemSelector.addEventListener('change', async () => {
+            const selectedFile = systemSelector.value;
+            try {
+                const data = await fetchSystemData(selectedFile);
+                const newContext = initializeContext();
+                newContext.formulas = [];
+                for (const axiom of data.axioms) {
+                    newContext.formulas.push(parse(axiom));
+                }
+                updateContext(newContext);
+                context = newContext;
+                updateTextAreaWithUnicode();
+                updateMathJax();
+                state = 'initial';
+                systemSelector.style.display = 'none';
+                displayInitialPrompt();
+            } catch (error) {
+                updateStatus(`Error loading system: ${error.message}`);
+            }
+        });
+
+        // Start the program in initial mode
+        inputField.disabled = true;
+        displayInitialPrompt();
     </script>
 </body>
 </html>
