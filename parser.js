@@ -261,6 +261,9 @@ function peg$parse(input, options) {
   var peg$f21 = function(args) {
       return createTuple(args.length, args);
   };
+  var peg$f22 = function(args) {
+      return createSet(args.length, args);
+  };
   var peg$currPos = options.peg$currPos | 0;
   var peg$savedPos = peg$currPos;
   var peg$posDetailsCache = [{ line: 1, column: 1 }];
@@ -1116,6 +1119,9 @@ function peg$parse(input, options) {
       s0 = peg$parseVariable();
       if (s0 === peg$FAILED) {
         s0 = peg$parseTuple();
+        if (s0 === peg$FAILED) {
+          s0 = peg$parseSet();
+        }
       }
     }
 
@@ -1243,6 +1249,36 @@ function peg$parse(input, options) {
     return s0;
   }
 
+  function peg$parseSet() {
+    var s0, s1, s2, s3, s4, s5;
+
+    s0 = peg$currPos;
+    s1 = peg$parseLBRACE();
+    if (s1 !== peg$FAILED) {
+      s2 = peg$parse_();
+      s3 = peg$parseTermList();
+      if (s3 !== peg$FAILED) {
+        s4 = peg$parse_();
+        s5 = peg$parseRBRACE();
+        if (s5 !== peg$FAILED) {
+          peg$savedPos = s0;
+          s0 = peg$f22(s3);
+        } else {
+          peg$currPos = s0;
+          s0 = peg$FAILED;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$FAILED;
+      }
+    } else {
+      peg$currPos = s0;
+      s0 = peg$FAILED;
+    }
+
+    return s0;
+  }
+
 
   // Helper functions for creating AST nodes
   function createQuantifier(variable, formula, name) {
@@ -1267,6 +1303,10 @@ function peg$parse(input, options) {
 
   function createTuple(count, terms) {
     return { type: "Tuple", elements: terms.slice(0, count) };
+  }
+
+  function createSet(count, terms) {
+    return { type: "Set", elements: terms.slice(0, count) };
   }
 
   // Binds a variable in a formula

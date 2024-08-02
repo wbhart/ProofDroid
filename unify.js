@@ -1,6 +1,11 @@
 // unify.js
 import { is_term } from './node_helper.js';
 
+// Clone a substitution list (mgu)
+function clone_subst(subst) {
+  return { ...subst };
+}
+
 // Unification function
 function unify(x, y, subst = {}) {
   if (x.type === "Variable" && x.metavar) {
@@ -18,6 +23,8 @@ function unify(x, y, subst = {}) {
       return unify_lists(x.arguments, y.arguments, subst);
     } else if (x.type === "Tuple" && x.elements.length === y.elements.length) {
       return unify_lists(x.elements, y.elements, subst);
+    } else if (x.type === "Set") {
+      return unify_sets(x.elements, y.elements, subst);
     } else if (x.type === "LogicalBinary" && x.name === y.name) {
       const leftUnify = unify(x.left, y.left, subst);
       return leftUnify !== null ? unify(x.right, y.right, leftUnify) : null;
@@ -56,6 +63,65 @@ function unify_metavar(mv, x, subst) {
     return unify(subst[mv.name], x, subst);
   } else {
     return extend_subst(mv, x, subst);
+  }
+}
+
+// Unify sets of terms
+function unify_sets(xs, ys, subst) {
+  const dealtWithXs = new Set();
+  const dealtWithYs = new Set();
+  let newSubst = subst;
+
+  // First pass: Find all elements in xs that unify with precisely one element in ys
+  for (let i = 0; i < xs.length; i++) {
+    let match = null;
+    for (let j = 0; j < ys.length; j++) {
+      const substCopy = clone_subst(newSubst);
+      const unifiedSubst = unify(xs[i], ys[j], substCopy);
+      if (unifiedSubst !== null) {
+        if (match !== null) {
+          match = null; // More than one match found, ignore this element
+          break;
+        }
+        match = [unifiedSubst, j];
+      }
+    }
+    if (match !== null) {
+      newSubst = match[0];
+      dealtWithXs.add(i);
+      dealtWithYs.add(match[1]);
+    }
+  }
+
+  // Second pass: Find all elements in ys that haven't had at least one thing unified with them
+  for (let j = 0; j < ys.length; j++) {
+    if (!dealtWithYs.has(j)) {
+      let match = null;
+      for (let i = 0; i < xs.length; i++) {
+        const substCopy = clone_subst(newSubst);
+        const unifiedSubst = unify(ys[j], xs[i], substCopy);
+        if (unifiedSubst !== null) {
+          if (match !== null) {
+            return null; // More than one match found, fail immediately
+          }
+          match = [unifiedSubst, i];
+        }
+      }
+      if (match !== null) {
+        newSubst = match[0];
+        dealtWithYs.add(j);
+        dealtWithXs.add(match[1]);
+      } else {
+        return null; // Failed to unify an element in ys with precisely one element in xs
+      }
+    }
+  }
+
+  // Check if all elements have been dealt with
+  if (dealtWithXs.size === xs.length && dealtWithYs.size === ys.length) {
+    return newSubst;
+  } else {
+    return null;
   }
 }
 

@@ -4,9 +4,11 @@ function is_term(node) {
   if (node.type === "Variable") {
     return true;
   } else if (node.type === "Application") {
-    return node.arguments.every(is_term);
+    return true;
   } else if (node.type === "Tuple") {
-    return node.elements.every(is_term);
+    return true;
+  } else if (node.type === "Set") {
+    return true;
   }
   return false;
 }
@@ -20,6 +22,8 @@ function vars_used(node) {
     } else if (node.type === "Application") {
       node.arguments.forEach(collect);
     } else if (node.type === "Tuple") {
+      node.elements.forEach(collect);
+    } else if (node.type === "Set") {
       node.elements.forEach(collect);
     } else if (node.type === "Quantifier") {
       vars.add(node.variable.name);
@@ -70,6 +74,8 @@ function vars_rename(needRename, inUse, node) {
     } else if (node.type === "Application") {
       node.arguments.forEach(rename);
     } else if (node.type === "Tuple") {
+      node.elements.forEach(rename);
+    } else if (node.type === "Set") {
       node.elements.forEach(rename);
     } else if (node.type === "Quantifier") {
       if (needRename.includes(node.variable.name)) {

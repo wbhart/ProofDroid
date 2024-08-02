@@ -24,6 +24,10 @@
     return { type: "Tuple", elements: terms.slice(0, count) };
   }
 
+  function createSet(count, terms) {
+    return { type: "Set", elements: terms.slice(0, count) };
+  }
+
   // Binds a variable in a formula
   function bind_var(variable, formula) {
     function bind(node) {
@@ -143,6 +147,7 @@ Term
   = Application
   / Variable
   / Tuple
+  / Set
 
 Application
   = i:Variable _ OPEN _ args:TermList _ CLOSE {
@@ -157,4 +162,9 @@ TermList
 Tuple
   = OPEN _ args:TermList _ CLOSE {
       return createTuple(args.length, args);
+  }
+
+Set
+  = LBRACE _ args:TermList _ RBRACE {
+      return createSet(args.length, args);
   }
