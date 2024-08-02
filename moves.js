@@ -1,6 +1,6 @@
 // moves.js
 import { unify } from './unify.js';
-import { is_term, vars_used, vars_rename, lists_merge, deep_copy } from './node_helper.js';
+import { is_term, vars_used, vars_rename, lists_merge } from './node_helper.js';
 import { str_unicode } from './strings.js';
 
 // Helper function to get the intersection of two arrays
@@ -44,7 +44,7 @@ function substitution(formula, subst) {
     return node;
   }
 
-  return applySubst(deep_copy(formula));
+  return applySubst(structuredClone(formula));
 }
 
 // Function to perform modus ponens
@@ -55,7 +55,7 @@ function modus_ponens(implication, formula) {
   }
 
   // Deep copy the implication to avoid modifying the original
-  const implicationCopy = deep_copy(implication);
+  const implicationCopy = structuredClone(implication);
 
   // Extract the antecedent and consequent from the implication
   const antecedent = implicationCopy.left;

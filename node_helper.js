@@ -1,10 +1,5 @@
 // node_helper.js
 
-// Helper function to deep copy an object
-function deep_copy(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
-
 function is_term(node) {
   if (node.type === "Variable") {
     return true;
@@ -96,4 +91,4 @@ function lists_merge(list1, list2) {
   return Array.from(new Set([...list1, ...list2]));
 }
 
-export { is_term, vars_used, vars_rename, lists_merge, deep_copy };
+export { is_term, vars_used, vars_rename, lists_merge };
