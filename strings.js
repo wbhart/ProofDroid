@@ -19,7 +19,12 @@ function str_repr(node) {
     case "Tuple":
       return `(${node.elements.map(element => str_repr(element)).join(", ")})`;
     case "Set":
-      return `{${node.elements.map(element => str_repr(element)).join(", ")}}`;
+      if (node.elements.length === 0) {
+         const setInfo = getPrecedenceInfo('emptyset');
+         return `${setInfo.repr}`;
+      } else {
+         return `{${node.elements.map(element => str_repr(element)).join(", ")}}`;
+      }
     case "LogicalUnary":
       const unaryInfo = getPrecedenceInfo(node.name);
       return `${unaryInfo.repr} ${parenthesize(node, node.formula, str_repr, true)}`;
@@ -49,7 +54,12 @@ function str_unicode(node) {
     case "Tuple":
       return `(${node.elements.map(element => str_unicode(element)).join(", ")})`;
     case "Set":
-      return `{${node.elements.map(element => str_unicode(element)).join(", ")}}`;
+      if (node.elements.length === 0) {
+         const setInfo = getPrecedenceInfo('emptyset');
+         return `${setInfo.unicode}`;
+      } else {
+         return `{${node.elements.map(element => str_unicode(element)).join(", ")}}`;
+      }
     case "LogicalUnary":
       const unaryInfo = getPrecedenceInfo(node.name);
       return `${unaryInfo.unicode}${parenthesize(node, node.formula, str_unicode, true)}`;
@@ -80,7 +90,8 @@ function str_polish(node) {
       }
     case "Set":
       if (node.elements.length === 0) {
-         return `{}`;
+         const setInfo = getPrecedenceInfo('emptyset');
+         return `${setInfo.unicode}`;
       } else {
          return `Set ${', '.repeat(node.elements.length - 1)}${node.elements.map(element => str_polish(element)).join(" ")}`;
       }
@@ -113,7 +124,12 @@ function str_mathjax(node) {
     case "Tuple":
       return `\\left(${node.elements.map(element => str_mathjax(element)).join(", ")}\\right)`;
     case "Set":
-      return `\\left\\{${node.elements.map(element => str_mathjax(element)).join(", ")}\\right\\}`;
+      if (node.elements.length === 0) {
+         const setInfo = getPrecedenceInfo('emptyset');
+         return `${setInfo.mathjax}`;
+      } else {
+         return `\\left\\{${node.elements.map(element => str_mathjax(element)).join(", ")}\\right\\}`;
+      }
     case "LogicalUnary":
       const unaryInfo = getPrecedenceInfo(node.name);
       return `${unaryInfo.mathjax} ${parenthesize(node, node.formula, str_mathjax, true)}`;

@@ -74,7 +74,8 @@ IMPLIES = "\\implies" { return 'implies' }
 IFF = "\\iff" { return 'iff' }
 FORALL = "\\forall" { return 'forall'; }
 EXISTS = "\\exists" { return 'exists'; }
-EQUALS = '=' { return createVariable('equals'); }
+EQUALS = "=" { return createVariable('equals'); }
+EMPTYSET = "\\emptyset" { return createSet(0, []); }
 OPEN = '('
 CLOSE = ')'
 COMMA = ','
@@ -148,6 +149,7 @@ Term
   / Variable
   / Tuple
   / Set
+  / EMPTYSET
 
 Application
   = i:Variable _ OPEN _ args:TermList _ CLOSE {
@@ -160,11 +162,19 @@ TermList
   }
 
 Tuple
-  = OPEN _ args:TermList _ CLOSE {
-      return createTuple(args.length, args);
+  = OPEN _ args:TermList? _ CLOSE {
+      if (args === null) {
+         return createTuple(0, []);
+      } else {
+         return createTuple(args.length, args);
+      }
   }
 
 Set
-  = LBRACE _ args:TermList _ RBRACE {
-      return createSet(args.length, args);
+  = LBRACE _ args:TermList? _ RBRACE {
+      if (args === null) {
+         return createSet(0, []);
+      } else {
+         return createSet(args.length, args);
+      }
   }

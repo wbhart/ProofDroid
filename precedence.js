@@ -7,5 +7,6 @@ export const precedenceTable = {
   implies: { precedence: 4, associativity: 'none', fixity: 'infix', repr: '\\implies', unicode: '→', mathjax: '\\to' },
   iff: { precedence: 4, associativity: 'right', fixity: 'infix', repr: '\\iff', unicode: '↔', mathjax: '\\leftrightarrow' },
   equals: { precedence: 2, associativity: 'none', fixity: 'infix', repr: '=', unicode: '=', mathjax: '=' },
+  emptyset: { precedence: 0, associativity: 'none', fixity: 'none', repr: '\\emptyset', unicode: '∅', mathjax: '\\emptyset' },
 };
 
