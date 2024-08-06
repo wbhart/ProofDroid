@@ -8,5 +8,8 @@ export const precedenceTable = {
   iff: { precedence: 4, associativity: 'right', fixity: 'infix', repr: '\\iff', unicode: '↔', mathjax: '\\leftrightarrow' },
   equals: { precedence: 2, associativity: 'none', fixity: 'infix', repr: '=', unicode: '=', mathjax: '=' },
   emptyset: { precedence: 0, associativity: 'none', fixity: 'none', repr: '\\emptyset', unicode: '∅', mathjax: '\\emptyset' },
+  cap: { precedence: 1, associativitity: 'left', fixity: 'infix', repr: '\\cap', unicode: '∩', mathjax: '\\cap' },
+  cup: { precedence: 1, associativitity: 'left', fixity: 'infix', repr: '\\cup', unicode: '∪', mathjax: '\\cup' },
+  setminus: { precedence: 1, associativitity: 'left', fixity: 'infix', repr: '\\setminus', unicode: '\\', mathjax: '\\setminus' },
 };
 

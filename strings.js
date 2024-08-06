@@ -5,15 +5,20 @@ function getPrecedenceInfo(name) {
 }
 
 function str_repr(node) {
+  const { repr = node.name } = getPrecedenceInfo(node.name);
   switch (node.type) {
+    case "BinaryOp":
+      return repr;
     case "Variable":
-      const { repr = node.name } = getPrecedenceInfo(node.name);
       return repr;
     case "Application":
       const { fixity = 'functional' } = getPrecedenceInfo(node.symbol.name);
       if (fixity === "functional") {
         return `${str_repr(node.symbol)}(${node.arguments.map(arg => str_repr(arg)).join(", ")})`;
-      } else {
+      } else if (fixity === 'infix') {
+        const binaryInfo = getPrecedenceInfo(node.symbol.name);
+        return `${parenthesize(node, node.arguments[0], str_repr, false, 'left')} ${binaryInfo.repr} ${parenthesize(node, node.arguments[1], str_repr, false, 'right')}`;
+      }  else {
         return `${node.arguments.map(arg => str_repr(arg)).join(` ${str_repr(node.symbol)} `)}`;
       }
     case "Tuple":
@@ -40,15 +45,20 @@ function str_repr(node) {
 }
 
 function str_unicode(node) {
+  const { unicode = node.name } = getPrecedenceInfo(node.name);
   switch (node.type) {
+    case "BinaryOp":
+      return unicode;
     case "Variable":
-      const { unicode = node.name } = getPrecedenceInfo(node.name);
       return unicode;
     case "Application":
       const { fixity = 'functional' } = getPrecedenceInfo(node.symbol.name);
       if (fixity === "functional") {
         return `${str_unicode(node.symbol)}(${node.arguments.map(arg => str_unicode(arg)).join(", ")})`;
-      } else {
+      } else if (fixity === 'infix') {
+        const binaryInfo = getPrecedenceInfo(node.symbol.name);
+        return `${parenthesize(node, node.arguments[0], str_unicode, false, 'left')} ${binaryInfo.unicode} ${parenthesize(node, node.arguments[1], str_unicode, false, 'right')}`;
+      }  else {
         return `${node.arguments.map(arg => str_unicode(arg)).join(` ${str_unicode(node.symbol)} `)}`;
       }
     case "Tuple":
@@ -75,10 +85,11 @@ function str_unicode(node) {
 }
 
 function str_polish(node) {
-  const { unicode } = getPrecedenceInfo(node.name);
+  const { unicode = name } = getPrecedenceInfo(node.name);
   switch (node.type) {
+    case "BinaryOp":
+      return unicode;
     case "Variable":
-      const { unicode = node.name } = getPrecedenceInfo(node.name);
       return unicode;
     case "Application":
       return `${str_polish(node.symbol)} ${node.arguments.map(arg => str_polish(arg)).join(" ")}`;
@@ -110,14 +121,19 @@ function str_polish(node) {
 }
 
 function str_mathjax(node) {
+  const { mathjax = node.name } = getPrecedenceInfo(node.name);
   switch (node.type) {
+    case "BinaryOp":
+      return mathjax;
     case "Variable":
-      const { mathjax = node.name } = getPrecedenceInfo(node.name);
       return mathjax;
     case "Application":
       const { fixity = 'functional' } = getPrecedenceInfo(node.symbol.name);
       if (fixity === "functional") {
         return `${str_mathjax(node.symbol)}\\left(${node.arguments.map(arg => str_mathjax(arg)).join(", ")}\\right)`;
+      } else if (fixity === 'infix') {
+        const binaryInfo = getPrecedenceInfo(node.symbol.name);
+        return `${parenthesize(node, node.arguments[0], str_mathjax, false, 'left')} ${binaryInfo.mathjax} ${parenthesize(node, node.arguments[1], str_mathjax, false, 'right')}`;
       } else {
         return `${node.arguments.map(arg => str_mathjax(arg)).join(` ${str_mathjax(node.symbol)} `)}`;
       }
@@ -145,27 +161,31 @@ function str_mathjax(node) {
 }
 
 function parenthesize(parent, child, stringFunc, childPosition) {
-  if (child.type === "Variable" || child.type === "Application" || child.type === "Tuple") {
+  if (child.type === 'Variable' || child.type === 'Tuple' || child.type === 'Set') {
     return stringFunc(child);
   }
+  
+  const parentInfo = getPrecedenceInfo(parent.type === 'Application' ? parent.symbol.name : parent.name);
+  const childInfo = getPrecedenceInfo(child.type === 'Application' ? child.symbol.name : child.name);
 
-  const parentInfo = getPrecedenceInfo(parent.name);
-  const childInfo = getPrecedenceInfo(child.name);
+  if (child.type === 'Application' && childInfo.fixity === 'functional') {
+    return stringFunc(child);
+  }
 
   if (childInfo.precedence < parentInfo.precedence) {
     return stringFunc(child);
   }
 
   if (childInfo.precedence === parentInfo.precedence) {
-    if (child.type !== "LogicalBinary") {
+    if (child.type !== 'LogicalBinary' && child.type !== 'BinaryOp') {
       return `(${stringFunc(child)})`;
     }
 
-    if (childInfo.associativity !== parentInfo.associativity || childInfo.associativity === "none") {
+    if (childInfo.associativity !== parentInfo.associativity || childInfo.associativity === 'none') {
       return `(${stringFunc(child)})`;
     }
 
-    if ((parentInfo.associativity === "left" && childPosition === 'right') || (parentInfo.associativity === "right" && childPosition === 'left')) {
+    if ((parentInfo.associativity === "left" && childPosition === 'right') || (parentInfo.associativity === 'right' && childPosition === 'left')) {
       return `(${stringFunc(child)})`;
     }
 

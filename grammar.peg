@@ -20,6 +20,10 @@
     return { type: "Variable", name: name, metavar: false, bound: false };
   }
 
+  function createBinaryOp(name) {
+    return { type: "BinaryOp", name: name };
+  }
+
   function createTuple(count, terms) {
     return { type: "Tuple", elements: terms.slice(0, count) };
   }
@@ -76,6 +80,9 @@ FORALL = "\\forall" { return 'forall'; }
 EXISTS = "\\exists" { return 'exists'; }
 EQUALS = "=" { return createVariable('equals'); }
 EMPTYSET = "\\emptyset" { return createSet(0, []); }
+CAP = "\\cap" { return 'cap'; }
+CUP = "\\cup" { return 'cup'; }
+SETMINUS = "\\setminus" { return 'setminus'; }
 OPEN = '('
 CLOSE = ')'
 COMMA = ','
@@ -145,6 +152,18 @@ SimpleFormula
   / OPEN _ f:Formula _ CLOSE { return f; }
 
 Term
+  = l:SimpleTerm tail:(_ s:SetOp _ r:SimpleTerm)* {
+      return tail.reduce((result, element) => {
+        return createApplication(createBinaryOp(element[1]), 2, [result, element[3]]);
+      }, l);
+    }
+  
+SetOp
+  = CAP
+  / CUP
+  / SETMINUS
+
+SimpleTerm
   = Application
   / Variable
   / Tuple
