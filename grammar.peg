@@ -83,6 +83,7 @@ EMPTYSET = "\\emptyset" { return createSet(0, []); }
 CAP = "\\cap" { return 'cap'; }
 CUP = "\\cup" { return 'cup'; }
 SETMINUS = "\\setminus" { return 'setminus'; }
+TIMES = "\\times" { return 'times'; }
 OPEN = '('
 CLOSE = ')'
 COMMA = ','
@@ -162,6 +163,7 @@ SetOp
   = CAP
   / CUP
   / SETMINUS
+  / TIMES
 
 SimpleTerm
   = Application
