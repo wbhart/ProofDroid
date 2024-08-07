@@ -16,6 +16,10 @@
     return { type: "Application", symbol: symbol, arguments: args.slice(0, count) };
   }
 
+  function createConst(name) {
+    return { type: "Const", name: name };
+  }
+
   function createVariable(name) {
     return { type: "Variable", name: name, metavar: false, bound: false };
   }
@@ -75,6 +79,8 @@ QuantifierOp
   = FORALL
   / EXISTS
 
+TOP = "\\top" { return createConst('top'); }
+BOT = "\\bot" { return createConst('bot'); }
 NEG = "\\neg" { return 'neg'; }
 WEDGE = "\\wedge" { return 'wedge'; }
 VEE = "\\vee" { return 'vee'; }
@@ -162,6 +168,8 @@ SimpleFormula
   / EqualPredicate
   / Predicate
   / Negation
+  / TOP
+  / BOT
   / Metavariable
   / OPEN _ f:Formula _ CLOSE { return f; }
 

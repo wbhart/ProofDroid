@@ -19,6 +19,8 @@ function unify(x, y, subst = {}) {
   } else if (x.type === y.type) {
     if (x.type === "Variable" && x.name === y.name) {
       return subst;
+    } else if (x.type === "Const" && x.name === y.name) {
+      return subst;
     } else if (x.type === "Application" && x.symbol.name === y.symbol.name && x.arguments.length === y.arguments.length) {
       return unify_lists(x.arguments, y.arguments, subst);
     } else if (x.type === "Tuple" && x.elements.length === y.elements.length) {
@@ -28,6 +30,8 @@ function unify(x, y, subst = {}) {
     } else if (x.type === "LogicalBinary" && x.name === y.name) {
       const leftUnify = unify(x.left, y.left, subst);
       return leftUnify !== null ? unify(x.right, y.right, leftUnify) : null;
+    } else if (x.type === "LogicalUnary" && x.name === y.name) {
+      return unify(x.formula, y.formula, subst);
     }
   }
   return null;

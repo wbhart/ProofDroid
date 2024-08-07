@@ -5,6 +5,8 @@ export const precedenceTable = {
   vee: { precedence: 4, associativity: 'left', fixity: 'infix', repr: '\\vee', unicode: '∨', mathjax: '\\vee' },
   sheffer: { precedence: 4, associativity: 'left', fixity: 'infix', repr: '\\uparrow', unicode: '↑', mathjax: '\\uparrow' },
   neg: { precedence: 0, associativity: 'none', fixity: 'prefix', repr: '\\neg', unicode: '¬', mathjax: '\\neg' },
+  top: { precedence: 0, associativity: 'none', fixity: 'none', repr: '\\top', unicode: '⊤', mathjax: '\\top' },
+  bot: { precedence: 0, associativity: 'none', fixity: 'none', repr: '\\bot', unicode: '⊥', mathjax: '\\bot' },
   implies: { precedence: 5, associativity: 'none', fixity: 'infix', repr: '\\implies', unicode: '→', mathjax: '\\to' },
   iff: { precedence: 5, associativity: 'right', fixity: 'infix', repr: '\\iff', unicode: '↔', mathjax: '\\leftrightarrow' },
   equals: { precedence: 3, associativity: 'none', fixity: 'infix', repr: '=', unicode: '=', mathjax: '=' },
