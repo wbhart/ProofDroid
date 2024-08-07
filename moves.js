@@ -59,7 +59,7 @@ function modus_ponens(implication, formula) {
 
   // Extract the antecedent and consequent from the implication
   const antecedent = implicationCopy.left;
-  const consequent = implicationCopy.right;
+  const consequent = (implication.name === 'implies' ? implicationCopy.right : implicationCopy.right.right);
 
   // Find all variables used in both formulas
   const varsInImplication = vars_used(implicationCopy);

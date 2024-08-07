@@ -1,0 +1,11 @@
+{
+  "system": "Principia Mathematica",
+  "axioms": [
+    "p \\vee p \\implies p",
+    "q \\implies p \\vee q",
+    "p \\vee q \\implies q \\vee p",
+    "p \\vee (q \\vee r) \\implies q \\vee (p \\vee r)",
+    "(q \\implies r) \\implies (p \\vee q \\implies p \\vee r)"
+  ]
+}
+

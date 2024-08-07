@@ -312,6 +312,9 @@
                     if (formula1.type === 'LogicalBinary' && formula1.name === 'implies') {
                         selectedLine1 = selectedIndex;
                         updateStatus('Modus Ponens Mode: Click on an antecedent.');
+                    } else if (formula1.type === 'LogicalBinary' && formula1.name === 'sheffer' && formula1.right.type === 'LogicalBinary' && formula1.right.name === 'sheffer') {
+                        selectedLine1 = selectedIndex;
+                        updateStatus('Modus Ponens Mode: Click on an antecedent.');
                     } else {
                         updateStatus('Error: Selected line is not an implication. Press Enter to continue.');
                         waitForEnter(() => {
