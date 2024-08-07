@@ -49,11 +49,6 @@ function substitution(formula, subst) {
 
 // Function to perform modus ponens
 function modus_ponens(implication, formula) {
-  // Check if the first argument is an implication
-  if (!(implication.type === 'LogicalBinary' && implication.name === 'implies')) {
-    return null; // Return null to indicate failure
-  }
-
   // Deep copy the implication to avoid modifying the original
   const implicationCopy = structuredClone(implication);
 
