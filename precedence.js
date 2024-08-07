@@ -12,5 +12,6 @@ export const precedenceTable = {
   cup: { precedence: 2, associativitity: 'left', fixity: 'infix', repr: '\\cup', unicode: '∪', mathjax: '\\cup' },
   setminus: { precedence: 2, associativitity: 'left', fixity: 'infix', repr: '\\setminus', unicode: '\\', mathjax: '\\setminus' },
   times: { precedence: 2, associativitity: 'left', fixity: 'infix', repr: '\\times', unicode: '×', mathjax: '\\times' },
+  powerset: { precedece: 0, associativity: 'none', fixity: 'functional', repr: '\\mathcal{P}', unicode: '𝒫', mathjax: '\\mathcal{P}' },
 };
 

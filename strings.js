@@ -7,6 +7,8 @@ function getPrecedenceInfo(name) {
 function str_repr(node) {
   const { repr = node.name } = getPrecedenceInfo(node.name);
   switch (node.type) {
+    case "UnaryOp":
+      return repr;
     case "BinaryOp":
       return repr;
     case "Variable":
@@ -47,6 +49,8 @@ function str_repr(node) {
 function str_unicode(node) {
   const { unicode = node.name } = getPrecedenceInfo(node.name);
   switch (node.type) {
+    case "UnaryOp":
+      return unicode;
     case "BinaryOp":
       return unicode;
     case "Variable":
@@ -85,8 +89,10 @@ function str_unicode(node) {
 }
 
 function str_polish(node) {
-  const { unicode = name } = getPrecedenceInfo(node.name);
+  const { unicode = node.name } = getPrecedenceInfo(node.name);
   switch (node.type) {
+    case "UnaryOp":
+      return uniocode;
     case "BinaryOp":
       return unicode;
     case "Variable":
@@ -123,6 +129,8 @@ function str_polish(node) {
 function str_mathjax(node) {
   const { mathjax = node.name } = getPrecedenceInfo(node.name);
   switch (node.type) {
+    case "UnaryOp":
+      return mathjax;
     case "BinaryOp":
       return mathjax;
     case "Variable":

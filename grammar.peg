@@ -24,6 +24,10 @@
     return { type: "BinaryOp", name: name };
   }
 
+  function createUnaryOp(name) {
+    return { type: "UnaryOp", name: name };
+  }
+
   function createTuple(count, terms) {
     return { type: "Tuple", elements: terms.slice(0, count) };
   }
@@ -84,6 +88,7 @@ CAP = "\\cap" { return 'cap'; }
 CUP = "\\cup" { return 'cup'; }
 SETMINUS = "\\setminus" { return 'setminus'; }
 TIMES = "\\times" { return 'times'; }
+POWERSET = "\\mathcal{P}" { return 'powerset'; }
 OPEN = '('
 CLOSE = ')'
 COMMA = ','
@@ -167,6 +172,7 @@ SetOp
 
 SimpleTerm
   = Application
+  / UnaryOp
   / Variable
   / Tuple
   / Set
@@ -180,6 +186,11 @@ Application
 TermList
   = head:Term tail:(_ COMMA _ Term)* {
       return [head].concat(tail.map(e => e[3]));
+  }
+
+UnaryOp
+  = p:POWERSET _ OPEN _ t:Term _ CLOSE {
+      return createApplication(createUnaryOp(p), 1, [t]);
   }
 
 Tuple
