@@ -1,7 +1,7 @@
 {
   "system": "Nicod",
   "axioms": [
-    "((p \\uparrow (q \\uparrow r)) \\uparrow ((\\top \\uparrow (\\top \\uparrow \\top)) \\uparrow ((s \\uparrow q) \\uparrow ((p \\uparrow s) \\uparrow (p \\uparrow s)))))"
+    "((p \\uparrow (q \\uparrow r)) \\uparrow ((t \\uparrow (t \\uparrow t)) \\uparrow ((s \\uparrow q) \\uparrow ((p \\uparrow s) \\uparrow (p \\uparrow s)))))"
   ]
 }
 

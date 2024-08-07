@@ -42,7 +42,7 @@ function str_repr(node) {
       return `${quantifierInfo.repr} ${str_repr(node.variable)} (${str_repr(node.formula)})`;
     case "LogicalBinary":
       const binaryInfo = getPrecedenceInfo(node.name);
-      return `${parenthesize(node, node.left, str_repr, false, 'left')} ${binaryInfo.repr} ${parenthesize(node, node.right, str_repr, false, 'right')}`;
+      return `${parenthesize(node, node.left, str_repr, 'left')} ${binaryInfo.repr} ${parenthesize(node, node.right, str_repr, 'right')}`;
     default:
       throw new Error(`Unknown node type: ${node.type}`);
   }
@@ -86,7 +86,7 @@ function str_unicode(node) {
       return `${quantifierInfo.unicode}${str_unicode(node.variable)} (${str_unicode(node.formula)})`;
     case "LogicalBinary":
       const binaryInfo = getPrecedenceInfo(node.name);
-      return `${parenthesize(node, node.left, str_unicode, false, 'left')} ${binaryInfo.unicode} ${parenthesize(node, node.right, str_unicode, false, 'right')}`;
+      return `${parenthesize(node, node.left, str_unicode, 'left')} ${binaryInfo.unicode} ${parenthesize(node, node.right, str_unicode, 'right')}`;
     default:
       throw new Error(`Unknown node type: ${node.type}`);
   }
@@ -170,7 +170,7 @@ function str_mathjax(node) {
       return `${quantifierInfo.mathjax} ${str_mathjax(node.variable)} \\left(${str_mathjax(node.formula)}\\right)`;
     case "LogicalBinary":
       const binaryInfo = getPrecedenceInfo(node.name);
-      return `${parenthesize(node, node.left, str_mathjax, false, 'left')} ${binaryInfo.mathjax} ${parenthesize(node, node.right, str_mathjax, false, 'right')}`;
+      return `${parenthesize(node, node.left, str_mathjax, 'left')} ${binaryInfo.mathjax} ${parenthesize(node, node.right, str_mathjax, 'right')}`;
     default:
       throw new Error(`Unknown node type: ${node.type}`);
   }
