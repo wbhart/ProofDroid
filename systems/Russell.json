@@ -1,0 +1,12 @@
+{
+  "system": "Russell",
+  "axioms": [
+    "p \\wedge q \\implies p",
+    "(p \\implies q) \\wedge (q \\implies r) \\implies (p \\implies r)",
+    "(p \\implies (q \\implies r)) \\implies  (p \\wedge q \\implies r)",
+    "(p \\wedge q \\implies r) \\implies (p \\implies (q \\implies r))",
+    "(p \\implies q) \\wedge (p \\implies r) \\implies (p \\implies q \\wedge r)",
+    "((p \\implies q) \\implies p) \\implies p"
+  ]
+}
+
