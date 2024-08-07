@@ -3,6 +3,7 @@ export const precedenceTable = {
   exists: { precedence: 0, associativity: 'none', fixity: 'none', repr: '\\exists', unicode: '∃', mathjax: '\\exists' },
   wedge: { precedence: 4, associativity: 'left', fixity: 'infix', repr: '\\wedge', unicode: '∧', mathjax: '\\wedge' },
   vee: { precedence: 4, associativity: 'left', fixity: 'infix', repr: '\\vee', unicode: '∨', mathjax: '\\vee' },
+  sheffer: { precedence: 4, associativity: 'left', fixity: 'infix', repr: '\\uparrow', unicode: '↑', mathjax: '\\uparrow' },
   neg: { precedence: 0, associativity: 'none', fixity: 'prefix', repr: '\\neg', unicode: '¬', mathjax: '\\neg' },
   implies: { precedence: 5, associativity: 'none', fixity: 'infix', repr: '\\implies', unicode: '→', mathjax: '\\to' },
   iff: { precedence: 5, associativity: 'right', fixity: 'infix', repr: '\\iff', unicode: '↔', mathjax: '\\leftrightarrow' },

@@ -75,11 +75,12 @@ QuantifierOp
   = FORALL
   / EXISTS
 
-NEG = "\\neg" { return 'neg' }
-WEDGE = "\\wedge" { return 'wedge' }
-VEE = "\\vee" { return 'vee' }
-IMPLIES = "\\implies" { return 'implies' }
-IFF = "\\iff" { return 'iff' }
+NEG = "\\neg" { return 'neg'; }
+WEDGE = "\\wedge" { return 'wedge'; }
+VEE = "\\vee" { return 'vee'; }
+SHEFFER = "\\uparrow" { return 'sheffer'; }
+IMPLIES = "\\implies" { return 'implies'; }
+IFF = "\\iff" { return 'iff'; }
 FORALL = "\\forall" { return 'forall'; }
 EXISTS = "\\exists" { return 'exists'; }
 EQUALS = "=" { return createVariable('equals'); }
@@ -127,9 +128,16 @@ AndFormula
     }
 
 OrFormula
-  = l:SimpleFormula tail:(_ VEE _ r:SimpleFormula)* {
+  = l:ShefferFormula tail:(_ VEE _ r:ShefferFormula)* {
       return tail.reduce((result, element) => {
         return createLogicalBinary(result, element[3], "vee");
+      }, l);
+    }
+
+ShefferFormula
+  = l:SimpleFormula tail:(_ SHEFFER _ r:SimpleFormula)* {
+      return tail.reduce((result, element) => {
+        return createLogicalBinary(result, element[3], "sheffer");
       }, l);
     }
 
