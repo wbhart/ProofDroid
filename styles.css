@@ -45,7 +45,7 @@ h1.header {
 
 .editable-div {
     width: 100%;
-    height: calc(100vh - 300px); /* Adjust height to fit within the viewport */
+    height: calc(100vh - 330px); /* Adjust height to fit within the viewport */
     border: 1px solid #ccc;
     padding: 10px;
     overflow-y: auto;
@@ -57,6 +57,11 @@ h1.header {
 img {
     max-width: 100%;
     height: auto;
+}
+
+#inputFieldTargets {
+    max-height: 10em; /* Adjust height as needed */
+    overflow-y: auto;
 }
 
 #systemSelector {
