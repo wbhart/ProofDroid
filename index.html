@@ -227,15 +227,16 @@
             return context.lines.filter(line => line.target);
         }
 
-        function addLineToContext(line, isTarget = false) {
+        function addLineToContext(line, isTarget = false, assumptions = [], justification = isTarget ? ['Tar', []] : ['Hyp', []]) {
             context.lines.push({
                 formula: line,
                 target: isTarget,
-                assumptions: [],
+                assumptions: assumptions,
                 proved: !isTarget,
-                justification: isTarget ? ['Tar', []] : ['Hyp', []]
+                justification: justification
             });
         }
+
 
         inputFieldHypotheses.addEventListener('input', handleHypothesisInput);
         inputFieldTargets.addEventListener('input', handleTargetInput);
@@ -307,35 +308,31 @@
         }
 
         document.addEventListener('keydown', async (event) => {
-            if (state === 'initial') {
-                if (event.key === 'e') {
-                    state = 'edit';
-                    inputFieldHypotheses.contentEditable = true;
-                    inputFieldTargets.contentEditable = true;
-                    updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
-                    updateDivWithRepr(); // Enter edit mode (repr mode)
-                    displayEditModeHelp();
-                } else if (event.key === 'm' && context.lines.length > 0) {
-                    state = 'manual';
-                    displayManualPrompt();
-                } else if (event.key === 'l') {
-                    await loadSystemSelector();
-                }
-            } else if (state === 'manual') {
-                if (event.key === 'p') {
-                    state = 'modus_ponens';
-                    selectedLine1 = null;
-                    inputFieldHypotheses.contentEditable = false;
-                    inputFieldTargets.contentEditable = false;
-                    updateStatus('Modus Ponens Mode: Click on an implication, then an antecedent.');
-                }
-            } else if (event.key === 'Escape') {
-                state = 'initial';
+            if (event.key === 'e' && state === 'initial') {
+                state = 'edit';
+                inputFieldHypotheses.contentEditable = true;
+                inputFieldTargets.contentEditable = true;
+                updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
+                updateDivWithRepr(); // Enter edit mode (repr mode)
+                displayEditModeHelp();
+            } else if (event.key === 'm' && state === 'initial' && context.lines.length > 0) {
+                state = 'manual';
+                displayManualPrompt();
+            } else if (event.key === 'p' && state === 'manual') {
+                state = 'modus_ponens';
                 selectedLine1 = null;
                 inputFieldHypotheses.contentEditable = false;
                 inputFieldTargets.contentEditable = false;
-                updateDivWithUnicode(); // Exit edit mode, update to unicode view with reasons
-                displayInitialPrompt();
+                updateStatus('Modus Ponens Mode: Click on an implication, then an antecedent.');
+            } else if (event.key === 'Escape') {
+                if (state === 'manual' || state === 'modus_ponens' || state === 'edit') {
+                    state = 'initial';
+                    selectedLine1 = null;
+                    inputFieldHypotheses.contentEditable = false;
+                    inputFieldTargets.contentEditable = false;
+                    updateDivWithUnicode(); // Exit any mode, update to unicode view with reasons
+                    displayInitialPrompt();
+                }
             }
         });
 
@@ -450,7 +447,8 @@
 
                     const result = modus_ponens(formula1, formula2);
                     if (result) {
-                        addLineToContext(result, false);
+                        const justification = ['MP', [selectedLine1 + 1, lineIndex + 1]]; // Use 1-based indexing
+                        addLineToContext(result, false, [selectedLine1, lineIndex], justification);
                         updateDivWithUnicode(); // Update view to show the new line with reasons
                         state = 'manual';
                         displayManualPrompt();
