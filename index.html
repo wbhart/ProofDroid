@@ -272,8 +272,6 @@
         inputField.addEventListener('click', (event) => {
             if (state === 'modus_ponens') {
                 const target = event.target;
-
-                // Identify the lineDiv parent element to correctly get the line index
                 const lineDiv = target.closest('div');
                 if (!lineDiv) {
                     updateStatus('Error: Could not find the clicked line. Please try again.');
@@ -312,7 +310,8 @@
 
                     const result = modus_ponens(formula1, formula2);
                     if (result) {
-                        addLine(result);
+                        // Add the result as a new line with the correct reason and dependencies
+                        addLine(result, false, [selectedLine1, lineIndex], false, ['MP', [selectedLine1 + 1, lineIndex + 1]]);
                         updateDivWithUnicode();
                         state = 'manual';
                         displayManualPrompt();
@@ -331,7 +330,6 @@
                 }
             }
         });
-
 
         systemSelector.addEventListener('change', async () => {
             const selectedFile = systemSelector.value;
