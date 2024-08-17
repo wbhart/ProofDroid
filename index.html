@@ -3,62 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Proof Droid -- v0.1</title>
-    <style type="text/css">
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 0;
-        }
-        h1.header {
-            text-align: center;
-            width: 100%;
-            margin-top: 20px;
-        }
-        .content {
-            display: flex;
-            width: 100%;
-            margin-top: 20px;
-        }
-        .left-column, .middle-column, .right-column {
-            padding: 10px;
-        }
-        .left-column, .right-column {
-            width: 40%;
-        }
-        .middle-column {
-            width: 20%;
-            text-align: center;
-        }
-        .status-bar {
-            width: 100%;
-            text-align: center;
-            padding: 10px;
-            background-color: #f0f0f0;
-            border-top: 1px solid #ccc;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-        }
-        textarea {
-            width: 100%;
-            height: calc(100vh - 300px); /* Adjust height to fit within the viewport */
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-        }
-        #systemSelector {
-            display: block;
-            margin-top: 10px;
-            width: 100%;
-        }
-        .scrollable-content {
-            max-height: calc(100vh - 250px); /* Adjust height to fit within the viewport */
-            overflow-y: auto;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="styles.css">
     <!-- Include MathJax -->
     <script>
         window.MathJax = {
@@ -96,7 +41,7 @@
         import { parse } from './parser.js';
         import { str_repr, str_unicode, str_polish, str_mathjax } from './strings.js';
         import { modus_ponens } from './moves.js';
-        import { initializeContext, getContext, updateContext } from './context.js';
+        import { initializeContext, getContext, updateContext, addLine, getLine, updateLine } from './context.js';
         import { getCurrentLine, getCaretPosition } from './interface_helper.js';
         import { listFiles } from './list_files.js';
 
@@ -115,11 +60,11 @@
         }
 
         function updateTextAreaWithRepr() {
-            inputField.value = context.formulas.map(f => str_repr(f)).join('\n');
+            inputField.value = context.lines.map(line => str_repr(line.formula)).join('\n');
         }
 
         function updateTextAreaWithUnicode() {
-            inputField.value = context.formulas.map(f => str_unicode(f)).join('\n');
+            inputField.value = context.lines.map(line => str_unicode(line.formula)).join('\n');
         }
 
         function updateMathJax(formula) {
@@ -224,7 +169,7 @@
                 updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
                 updateTextAreaWithRepr();
                 displayEditModeHelp();
-            } else if (event.key === 'm' && state === 'initial' && context.formulas.length > 0) {
+            } else if (event.key === 'm' && state === 'initial' && context.lines.length > 0) {
                 state = 'manual';
                 displayManualPrompt();
             } else if (event.key === 'p' && state === 'manual') {
@@ -248,7 +193,6 @@
             if (state === 'edit') {
                 const lines = inputField.value.split('\n');
                 const newContext = initializeContext();
-                newContext.formulas = [];
 
                 for (let i = 0; i < lines.length; i++) {
                     const trimmedLine = lines[i].trim();
@@ -257,7 +201,7 @@
                     }
                     try {
                         const formula = parse(trimmedLine);
-                        newContext.formulas.push(formula);
+                        addLine(formula); // Add as a new line with default properties
                         updateMathJax(formula);
                     } catch (e) {
                         if (e.name === 'SyntaxError') {
@@ -308,11 +252,9 @@
                 const selectedIndex = lines.indexOf(clickedLine);
 
                 if (selectedLine1 === null) {
-                    const formula1 = context.formulas[selectedIndex];
+                    const line1 = getLine(selectedIndex);
+                    const formula1 = line1.formula;
                     if (formula1.type === 'LogicalBinary' && formula1.name === 'implies') {
-                        selectedLine1 = selectedIndex;
-                        updateStatus('Modus Ponens Mode: Click on an antecedent.');
-                    } else if (formula1.type === 'LogicalBinary' && formula1.name === 'sheffer' && formula1.right.type === 'LogicalBinary' && formula1.right.name === 'sheffer') {
                         selectedLine1 = selectedIndex;
                         updateStatus('Modus Ponens Mode: Click on an antecedent.');
                     } else {
@@ -325,12 +267,14 @@
                         });
                     }
                 } else {
-                    const formula1 = context.formulas[selectedLine1];
-                    const formula2 = context.formulas[selectedIndex];
+                    const line1 = getLine(selectedLine1);
+                    const line2 = getLine(selectedIndex);
+                    const formula1 = line1.formula;
+                    const formula2 = line2.formula;
 
                     const result = modus_ponens(formula1, formula2);
                     if (result) {
-                        context.formulas.push(result);
+                        addLine(result, false, [selectedLine1, selectedIndex], true, ['MP', [selectedLine1, selectedIndex]]);
                         updateTextAreaWithUnicode();
                         state = 'manual';
                         displayManualPrompt();
@@ -355,9 +299,8 @@
             try {
                 const data = await fetchSystemData(selectedFile);
                 const newContext = initializeContext();
-                newContext.formulas = [];
                 for (const axiom of data.axioms) {
-                    newContext.formulas.push(parse(axiom));
+                    addLine(parse(axiom)); // Add each axiom as a line
                 }
                 updateContext(newContext);
                 context = newContext;
