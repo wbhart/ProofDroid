@@ -22,7 +22,7 @@
     <h1 class="header">Proof Droid -- ver 0.1</h1>
     <div class="content">
         <div class="left-column">
-            <textarea id="inputField" placeholder="Enter text to parse"></textarea>
+            <div id="inputField" contenteditable="true" class="editable-div"></div>
             <select id="systemSelector" style="display:none;"></select>
         </div>
         <div class="middle-column">
@@ -59,12 +59,22 @@
             statusField.innerText = message;
         }
 
-        function updateTextAreaWithRepr() {
-            inputField.value = context.lines.map(line => str_repr(line.formula)).join('\n');
+        function updateDivWithRepr() {
+            inputField.innerHTML = ''; // Clear the content
+            context.lines.forEach((line, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.textContent = str_repr(line.formula);
+                inputField.appendChild(lineDiv);
+            });
         }
 
-        function updateTextAreaWithUnicode() {
-            inputField.value = context.lines.map(line => str_unicode(line.formula)).join('\n');
+        function updateDivWithUnicode() {
+            inputField.innerHTML = ''; // Clear the content
+            context.lines.forEach((line, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.textContent = str_unicode(line.formula);
+                inputField.appendChild(lineDiv);
+            });
         }
 
         function updateMathJax(formula) {
@@ -164,10 +174,9 @@
         document.addEventListener('keydown', async (event) => {
             if (event.key === 'e' && state === 'initial') {
                 state = 'edit';
-                inputField.disabled = false;
-                inputField.placeholder = 'Enter text to parse';
+                inputField.contentEditable = true;
                 updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
-                updateTextAreaWithRepr();
+                updateDivWithRepr();
                 displayEditModeHelp();
             } else if (event.key === 'm' && state === 'initial' && context.lines.length > 0) {
                 state = 'manual';
@@ -175,23 +184,22 @@
             } else if (event.key === 'p' && state === 'manual') {
                 state = 'modus_ponens';
                 selectedLine1 = null;
-                inputField.disabled = false;
+                inputField.contentEditable = false;
                 updateStatus('Modus Ponens Mode: Click on an implication, then an antecedent.');
             } else if (event.key === 'l' && state === 'initial') {
                 await loadSystemSelector();
             } else if (event.key === 'Escape') {
                 state = 'initial';
                 selectedLine1 = null;
-                inputField.disabled = true;
-                systemSelector.style.display = 'none';
-                updateTextAreaWithUnicode();
+                inputField.contentEditable = false;
+                updateDivWithUnicode();
                 displayInitialPrompt();
             }
         });
 
         inputField.addEventListener('blur', () => {
             if (state === 'edit') {
-                const lines = inputField.value.split('\n');
+                const lines = inputField.innerText.split('\n');
                 const newContext = initializeContext();
 
                 for (let i = 0; i < lines.length; i++) {
@@ -213,20 +221,22 @@
 
                 updateContext(newContext);
                 context = newContext;
-                updateTextAreaWithUnicode();
+                updateDivWithUnicode();
                 state = 'initial';
-                inputField.disabled = true;
+                inputField.contentEditable = false;
                 displayInitialPrompt();
             }
         });
 
         inputField.addEventListener('input', (event) => {
             if (state !== 'edit') {
-                event.preventDefault();
                 return false;
             }
 
-            const currentLine = getCurrentLine(inputField).trim();
+            const lines = inputField.innerText.split('\n');
+            const currentLineIndex = getCaretPosition(inputField).line;
+            const currentLine = lines[currentLineIndex]?.trim() || '';
+
             if (currentLine === '') {
                 updateStatus('');
                 return;
@@ -234,8 +244,8 @@
 
             try {
                 const result = parse(currentLine);
-                updateStatus('');
-                updateMathJax(result);
+                updateStatus(`Parsed successfully: ${str_repr(result)}`);
+                updateMathJax(result);  // Render the MathJax output
             } catch (e) {
                 if (e.name === 'SyntaxError') {
                     updateStatus(`Syntax Error: ${e.message}`);
@@ -247,35 +257,38 @@
 
         inputField.addEventListener('click', (event) => {
             if (state === 'modus_ponens') {
-                const lines = inputField.value.split('\n');
-                const clickedLine = getCurrentLine(inputField).trim();
-                const selectedIndex = lines.indexOf(clickedLine);
+                const range = document.caretRangeFromPoint(event.clientX, event.clientY);
+                const lines = inputField.innerText.split('\n');
+                const clickedText = range.startContainer.textContent.trim();
+                const clickedLineIndex = lines.findIndex(line => line.trim() === clickedText);
+
+                if (clickedLineIndex === -1) {
+                    updateStatus('Error: Could not find the clicked line. Please try again.');
+                    return;
+                }
 
                 if (selectedLine1 === null) {
-                    const line1 = getLine(selectedIndex);
-                    const formula1 = line1.formula;
+                    const formula1 = context.lines[clickedLineIndex].formula;
                     if (formula1.type === 'LogicalBinary' && formula1.name === 'implies') {
-                        selectedLine1 = selectedIndex;
+                        selectedLine1 = clickedLineIndex;
                         updateStatus('Modus Ponens Mode: Click on an antecedent.');
                     } else {
                         updateStatus('Error: Selected line is not an implication. Press Enter to continue.');
                         waitForEnter(() => {
                             selectedLine1 = null;
                             state = 'manual';
-                            inputField.disabled = true;
+                            inputField.contentEditable = true;
                             displayManualPrompt();
                         });
                     }
                 } else {
-                    const line1 = getLine(selectedLine1);
-                    const line2 = getLine(selectedIndex);
-                    const formula1 = line1.formula;
-                    const formula2 = line2.formula;
+                    const formula1 = context.lines[selectedLine1].formula;
+                    const formula2 = context.lines[clickedLineIndex].formula;
 
                     const result = modus_ponens(formula1, formula2);
                     if (result) {
-                        addLine(result, false, [selectedLine1, selectedIndex], true, ['MP', [selectedLine1, selectedIndex]]);
-                        updateTextAreaWithUnicode();
+                        addLine(result);
+                        updateDivWithUnicode();
                         state = 'manual';
                         displayManualPrompt();
                     } else {
@@ -283,13 +296,13 @@
                         waitForEnter(() => {
                             selectedLine1 = null;
                             state = 'manual';
-                            inputField.disabled = true;
+                            inputField.contentEditable = true;
                             displayManualPrompt();
                         });
                     }
 
                     updateContext(context);
-                    inputField.disabled = true;
+                    inputField.contentEditable = true;
                 }
             }
         });
@@ -300,11 +313,11 @@
                 const data = await fetchSystemData(selectedFile);
                 const newContext = initializeContext();
                 for (const axiom of data.axioms) {
-                    addLine(parse(axiom)); // Add each axiom as a line
+                    newContext.lines.push(parse(axiom));
                 }
                 updateContext(newContext);
                 context = newContext;
-                updateTextAreaWithUnicode();
+                updateDivWithUnicode();
                 state = 'initial';
                 systemSelector.style.display = 'none';
                 displayInitialPrompt();
@@ -314,7 +327,7 @@
         });
 
         // Start the program in initial mode
-        inputField.disabled = true;
+        inputField.contentEditable = false;
         displayInitialPrompt();
     </script>
 </body>

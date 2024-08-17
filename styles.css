@@ -20,10 +20,11 @@ h1.header {
 
 .left-column, .middle-column, .right-column {
     padding: 10px;
+    box-sizing: border-box; /* Ensures padding is included in width calculations */
 }
 
 .left-column, .right-column {
-    width: 40%;
+    width: 38%; /* Reduce width to prevent overlap */
 }
 
 .middle-column {
@@ -42,9 +43,15 @@ h1.header {
     left: 0;
 }
 
-textarea {
+.editable-div {
     width: 100%;
     height: calc(100vh - 300px); /* Adjust height to fit within the viewport */
+    border: 1px solid #ccc;
+    padding: 10px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: monospace; /* Ensures equal character width */
+    box-sizing: border-box; /* Include padding in width/height calculations */
 }
 
 img {
@@ -62,4 +69,3 @@ img {
     max-height: calc(100vh - 250px); /* Adjust height to fit within the viewport */
     overflow-y: auto;
 }
-
