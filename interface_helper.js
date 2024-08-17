@@ -11,17 +11,34 @@ export function getCaretPosition(ctrl) {
             const preCaretRange = range.cloneRange();
             preCaretRange.selectNodeContents(ctrl);
             preCaretRange.setEnd(range.endContainer, range.endOffset);
-            caretPos = preCaretRange.toString().length;  // Get caret position by measuring text length before caret
+            caretPos = preCaretRange.toString().length;
 
-            // Get the text before the caret and split into lines to determine the current line number
-            const textBeforeCaret = preCaretRange.toString();
-            const linesBeforeCaret = textBeforeCaret.split('\n');
-            currentLineIndex = linesBeforeCaret.length - 1;  // The current line index is the last line before caret
+            // Walk through the nodes up to the caret position and count the lines (based on block-level elements)
+            const childNodes = ctrl.childNodes;
+            let charsCount = 0;
+
+            for (let i = 0; i < childNodes.length; i++) {
+                const node = childNodes[i];
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const nodeText = node.textContent || '';
+                    charsCount += nodeText.length;
+
+                    if (charsCount >= caretPos) {
+                        break;
+                    }
+                } else if (node.nodeType === Node.ELEMENT_NODE && (node.nodeName === 'DIV' || node.nodeName === 'P' || node.nodeName === 'BR')) {
+                    currentLineIndex++;
+                    if (charsCount >= caretPos) {
+                        break;
+                    }
+                }
+            }
         }
     }
 
     return { pos: caretPos, line: currentLineIndex };
 }
+
 
 export function getCurrentLine(editableDiv) {
     const selection = window.getSelection();
