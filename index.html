@@ -70,9 +70,23 @@
 
         function updateDivWithUnicode() {
             inputField.innerHTML = ''; // Clear the content
+
             context.lines.forEach((line, index) => {
                 const lineDiv = document.createElement('div');
-                lineDiv.textContent = str_unicode(line.formula);
+                lineDiv.style.display = 'flex';
+                lineDiv.style.justifyContent = 'space-between';
+                lineDiv.style.alignItems = 'center'; // Ensure the reason text is vertically centered
+
+                const formulaSpan = document.createElement('span');
+                formulaSpan.textContent = str_unicode(line.formula);
+
+                const reasonSpan = document.createElement('span');
+                reasonSpan.textContent = `${line.justification[0]}${line.justification[1].length > 0 ? `[${line.justification[1].join(', ')}]` : ''}`;
+                reasonSpan.style.whiteSpace = 'nowrap'; // Prevent the reason from wrapping to the next line
+
+                lineDiv.appendChild(formulaSpan);
+                lineDiv.appendChild(reasonSpan);
+
                 inputField.appendChild(lineDiv);
             });
         }
@@ -257,20 +271,31 @@
 
         inputField.addEventListener('click', (event) => {
             if (state === 'modus_ponens') {
-                const range = document.caretRangeFromPoint(event.clientX, event.clientY);
-                const lines = inputField.innerText.split('\n');
-                const clickedText = range.startContainer.textContent.trim();
-                const clickedLineIndex = lines.findIndex(line => line.trim() === clickedText);
+                const target = event.target;
 
-                if (clickedLineIndex === -1) {
+                // Identify the lineDiv parent element to correctly get the line index
+                const lineDiv = target.closest('div');
+                if (!lineDiv) {
+                    updateStatus('Error: Could not find the clicked line. Please try again.');
+                    return;
+                }
+
+                const lineIndex = Array.from(inputField.children).indexOf(lineDiv);
+                if (lineIndex === -1 || lineIndex >= context.lines.length) {
+                    updateStatus('Error: Could not find the clicked line. Please try again.');
+                    return;
+                }
+
+                const clickedLine = context.lines[lineIndex];
+                if (!clickedLine) {
                     updateStatus('Error: Could not find the clicked line. Please try again.');
                     return;
                 }
 
                 if (selectedLine1 === null) {
-                    const formula1 = context.lines[clickedLineIndex].formula;
+                    const formula1 = clickedLine.formula;
                     if (formula1.type === 'LogicalBinary' && formula1.name === 'implies') {
-                        selectedLine1 = clickedLineIndex;
+                        selectedLine1 = lineIndex;
                         updateStatus('Modus Ponens Mode: Click on an antecedent.');
                     } else {
                         updateStatus('Error: Selected line is not an implication. Press Enter to continue.');
@@ -283,7 +308,7 @@
                     }
                 } else {
                     const formula1 = context.lines[selectedLine1].formula;
-                    const formula2 = context.lines[clickedLineIndex].formula;
+                    const formula2 = clickedLine.formula;
 
                     const result = modus_ponens(formula1, formula2);
                     if (result) {
@@ -306,6 +331,7 @@
                 }
             }
         });
+
 
         systemSelector.addEventListener('change', async () => {
             const selectedFile = systemSelector.value;
