@@ -308,22 +308,28 @@
         }
 
         document.addEventListener('keydown', async (event) => {
-            if (event.key === 'e' && state === 'initial') {
-                state = 'edit';
-                inputFieldHypotheses.contentEditable = true;
-                inputFieldTargets.contentEditable = true;
-                updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
-                updateDivWithRepr(); // Enter edit mode (repr mode)
-                displayEditModeHelp();
-            } else if (event.key === 'm' && state === 'initial' && context.lines.length > 0) {
-                state = 'manual';
-                displayManualPrompt();
-            } else if (event.key === 'p' && state === 'manual') {
-                state = 'modus_ponens';
-                selectedLine1 = null;
-                inputFieldHypotheses.contentEditable = false;
-                inputFieldTargets.contentEditable = false;
-                updateStatus('Modus Ponens Mode: Click on an implication, then an antecedent.');
+            if (state === 'initial') {
+                if (event.key === 'e') {
+                    state = 'edit';
+                    inputFieldHypotheses.contentEditable = true;
+                    inputFieldTargets.contentEditable = true;
+                    updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
+                    updateDivWithRepr(); // Enter edit mode (repr mode)
+                    displayEditModeHelp();
+                } else if (event.key === 'm' && context.lines.length > 0) {
+                    state = 'manual';
+                    displayManualPrompt();
+                } else if (event.key === 'l') {
+                    await loadSystemSelector();  // Load the system selector when 'l' is pressed
+                }
+            } else if (state === 'manual') {
+                if (event.key === 'p') {
+                    state = 'modus_ponens';
+                    selectedLine1 = null;
+                    inputFieldHypotheses.contentEditable = false;
+                    inputFieldTargets.contentEditable = false;
+                    updateStatus('Modus Ponens Mode: Click on an implication, then an antecedent.');
+                }
             } else if (event.key === 'Escape') {
                 if (state === 'manual' || state === 'modus_ponens' || state === 'edit') {
                     state = 'initial';
@@ -473,9 +479,21 @@
             try {
                 const data = await fetchSystemData(selectedFile);
                 const newContext = initializeContext();
-                for (const axiom of data.axioms) {
-                    newContext.lines.push(parse(axiom));
+
+                if (data && Array.isArray(data.axioms)) {
+                    for (const axiom of data.axioms) {
+                        newContext.lines.push({
+                            formula: parse(axiom),
+                            target: false,
+                            assumptions: [],
+                            proved: true,
+                            justification: ['Hyp', []]
+                        });
+                    }
+                } else {
+                    throw new Error('System data is not correctly formatted');
                 }
+
                 updateContext(newContext);
                 context = newContext;
                 updateDivWithUnicode(); // Update view after loading system

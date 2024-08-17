@@ -39,7 +39,6 @@ export function getCaretPosition(ctrl) {
     return { pos: caretPos, line: currentLineIndex };
 }
 
-
 export function getCurrentLine(editableDiv) {
     const selection = window.getSelection();
     if (!selection.rangeCount) return ''; // Return empty string if no range is selected
