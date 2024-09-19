@@ -10,6 +10,8 @@ export const precedenceTable = {
   implies: { precedence: 5, associativity: 'none', fixity: 'infix', repr: '\\implies', unicode: '→', mathjax: '\\to' },
   iff: { precedence: 5, associativity: 'right', fixity: 'infix', repr: '\\iff', unicode: '↔', mathjax: '\\leftrightarrow' },
   equals: { precedence: 3, associativity: 'none', fixity: 'infix', repr: '=', unicode: '=', mathjax: '=' },
+  subset: { precedence: 3, associativity: 'none', fixity: 'infix', repr: '\\subset', unicode: '⊂', mathjax: '\\subset' },
+  subseteq: { precedence: 3, associativity: 'none', fixity: 'infix', repr: '\\subseteq', unicode: '⊆', mathjax: '\\subseteq' },
   emptyset: { precedence: 0, associativity: 'none', fixity: 'none', repr: '\\emptyset', unicode: '∅', mathjax: '\\emptyset' },
   cap: { precedence: 2, associativitity: 'left', fixity: 'infix', repr: '\\cap', unicode: '∩', mathjax: '\\cap' },
   cup: { precedence: 2, associativitity: 'left', fixity: 'infix', repr: '\\cup', unicode: '∪', mathjax: '\\cup' },

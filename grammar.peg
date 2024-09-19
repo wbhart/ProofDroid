@@ -96,6 +96,8 @@ CUP = "\\cup" { return 'cup'; }
 SETMINUS = "\\setminus" { return 'setminus'; }
 TIMES = "\\times" { return 'times'; }
 POWERSET = "\\mathcal{P}" { return 'powerset'; }
+SUBSETEQ = "\\subseteq" { return createVariable('subseteq'); }
+SUBSET = "\\subset" { return createVariable('subset'); }
 OPEN = '('
 CLOSE = ')'
 COMMA = ','
@@ -152,6 +154,11 @@ EqualPredicate
       return createApplication(i, 2, [t1, t2]);
   }
 
+SubsetPredicate
+  = t1:Term _ i:SUBSETOP _ t2:Term {
+      return createApplication(i, 2, [t1, t2]);
+  }
+  
 Predicate
   = f:Application
 
@@ -160,12 +167,16 @@ Negation
       return createLogicalUnary(f, "neg");
   }
 
+SUBSETOP
+  = SUBSETEQ / SUBSET
+
 Metavariable
   = v:Variable { v.metavar = true; return v; }
   
 SimpleFormula
   = Quantifier
   / EqualPredicate
+  / SubsetPredicate
   / Predicate
   / Negation
   / TOP
