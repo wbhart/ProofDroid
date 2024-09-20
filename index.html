@@ -45,6 +45,7 @@
         import { initializeContext, updateContext } from './context.js';
         import { getCaretPosition } from './interface_helper.js';
         import { listFiles } from './list_files.js';
+        import { negate_formula } from './node_helper.js';  // Importing negate_formula
 
         let state = 'initial';
         let selectedLine1 = null;
@@ -75,8 +76,9 @@
             });
 
             targetLines.forEach((line) => {
+                const originalFormula = negate_formula(line.formula);  // Re-negate to show the original formula
                 const lineDiv = document.createElement('div');
-                lineDiv.textContent = str_repr(line.formula);
+                lineDiv.textContent = str_repr(originalFormula); // Show original formula to user
                 inputFieldTargets.appendChild(lineDiv);
             });
         }
@@ -107,12 +109,13 @@
             });
 
             targetLines.forEach((line) => {
+                const originalFormula = negate_formula(line.formula);  // Re-negate to show the original formula
                 const lineDiv = document.createElement('div');
                 lineDiv.style.display = 'flex';
                 lineDiv.style.justifyContent = 'space-between';
 
                 const formulaSpan = document.createElement('span');
-                formulaSpan.textContent = str_unicode(line.formula);
+                formulaSpan.textContent = str_unicode(originalFormula); // Show original formula to user
 
                 const reasonSpan = document.createElement('span');
                 reasonSpan.textContent = `${line.justification[0]}${line.justification[1].length > 0 ? `[${line.justification[1].join(', ')}]` : ''}`;
@@ -266,15 +269,16 @@
             }
             try {
                 const formula = parse(trimmedLine);
+                const negatedFormula = negate_formula(formula); // Negate before storing
                 if (getTargetLines().length > 0) {
                     // Update the existing target line
                     const targetLine = getTargetLines()[0];
-                    targetLine.formula = formula;
+                    targetLine.formula = negatedFormula; // Store negated formula
                 } else {
                     // Add a new target line
-                    addLineToContext(formula, true);
+                    addLineToContext(negatedFormula, true); // Store negated formula
                 }
-                updateMathJax(formula);
+                updateMathJax(formula); // Show the original formula
             } catch (e) {
                 if (e.name === 'SyntaxError') {
                     updateStatus(`Syntax Error on target line: ${e.message}`);
@@ -386,8 +390,8 @@
                     state = 'manual';
                     displayManualPrompt();
 
-                    // Apply specification to all formulas in the context
-                    specifyContextFormulas();
+                    // Apply specification to all formulas in the context, including target formulas
+                    specifyContextFormulas(); // This only modifies the context directly, no negation is applied
                 } else if (event.key === 'l') {
                     await loadSystemSelector();
                 }
@@ -412,18 +416,16 @@
             }
         });
 
-        // Function to apply specification to all formulas in the context
+        // Function to apply specification to all formulas in the context (manual mode)
         function specifyContextFormulas() {
             context.lines.forEach(line => {
-                // Apply the specification function only to formulas that are not already targets
-                if (!line.target) {
-                    line.formula = specification(line.formula);
-                }
+                // Apply specification to all lines, including target ones
+                line.formula = specification(line.formula);
             });
 
             // After modifying the formulas, update the UI
             updateContext(context);
-            updateDivWithUnicode();  // Update the view to show the updated formulas
+            updateDivWithUnicode();  // Re-negate when displaying to the user
         }
 
         systemSelector.addEventListener('change', async () => {

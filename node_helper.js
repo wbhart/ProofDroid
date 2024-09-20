@@ -1,5 +1,67 @@
 // node_helper.js
 
+  // Helper functions for creating AST nodes
+  function createQuantifier(variable, formula, name) {
+    return { type: "Quantifier", variable: variable, formula: formula, name: name };
+  }
+
+  function createLogicalUnary(formula, name) {
+    return { type: "LogicalUnary", formula: formula, name: name };
+  }
+
+  function createLogicalBinary(left, right, name) {
+    return { type: "LogicalBinary", left: left, right: right, name: name };
+  }
+
+  function createApplication(symbol, count, args) {
+    return { type: "Application", symbol: symbol, arguments: args.slice(0, count) };
+  }
+
+  function createConst(name) {
+    return { type: "Const", name: name };
+  }
+
+  function createVariable(name) {
+    return { type: "Variable", name: name, metavar: false, bound: false };
+  }
+
+  function createBinaryOp(name) {
+    return { type: "BinaryOp", name: name };
+  }
+
+  function createUnaryOp(name) {
+    return { type: "UnaryOp", name: name };
+  }
+
+  function createTuple(count, terms) {
+    return { type: "Tuple", elements: terms.slice(0, count) };
+  }
+
+  function createSet(count, terms) {
+    return { type: "Set", elements: terms.slice(0, count) };
+  }
+
+  // Binds a variable in a formula
+  function bind_var(variable, formula) {
+    function bind(node) {
+      if (node.type === "Variable" && node.name === variable.name) {
+        node.bound = true;
+      } else if (node.type === "Application") {
+        node.arguments.forEach(bind);
+      } else if (node.type === "Tuple") {
+        node.elements.forEach(bind);
+      } else if (node.type === "Quantifier") {
+        bind(node.formula);
+      } else if (node.type === "LogicalUnary") {
+        bind(node.formula);
+      } else if (node.type === "LogicalBinary") {
+        bind(node.left);
+        bind(node.right);
+      }
+    }
+    bind(formula);
+  }
+
 function is_term(node) {
   if (node.type === "Variable") {
     return true;
@@ -172,4 +234,43 @@ function unbind_variable(node, varName) {
   return node;
 }
 
-export { is_term, vars_used, vars_rename, lists_merge, universal_specification };
+function negate_formula(formula) {
+    // If the formula is a quantifier, apply De Morgan's laws to negate
+    if (formula.type === "Quantifier") {
+        if (formula.name === "forall") {
+            // Negate ∀x φ -> ∃x ¬φ
+            return createQuantifier(formula.variable, negate_formula(formula.formula), "exists");
+        } else if (formula.name === "exists") {
+            // Negate ∃x φ -> ∀x ¬φ
+            return createQuantifier(formula.variable, negate_formula(formula.formula), "forall");
+        }
+    }
+
+    // If the formula is already a negation, remove the negation
+    if (formula.type === "LogicalUnary" && formula.name === "neg") {
+        return formula.formula;
+    }
+
+    // Apply De Morgan's laws for conjunction (A ∧ B) -> (¬A ∨ ¬B)
+    if (formula.type === "LogicalBinary" && formula.name === "wedge") {
+        return createLogicalBinary(
+            negate_formula(formula.left),
+            negate_formula(formula.right),
+            "vee" // Use disjunction (∨)
+        );
+    }
+
+    // Apply De Morgan's laws for disjunction (A ∨ B) -> (¬A ∧ ¬B)
+    if (formula.type === "LogicalBinary" && formula.name === "vee") {
+        return createLogicalBinary(
+            negate_formula(formula.left),
+            negate_formula(formula.right),
+            "wedge" // Use conjunction (∧)
+        );
+    }
+
+    // For any other formula, apply negation
+    return createLogicalUnary(formula, "neg");
+}
+
+export { is_term, vars_used, vars_rename, lists_merge, universal_specification, negate_formula };
