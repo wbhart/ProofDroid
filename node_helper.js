@@ -97,4 +97,79 @@ function lists_merge(list1, list2) {
   return Array.from(new Set([...list1, ...list2]));
 }
 
-export { is_term, vars_used, vars_rename, lists_merge };
+function universal_specification(formula) {
+  // Step 1: Check if the top-level node is a universal quantifier
+  if (formula.type === "Quantifier" && formula.name === "forall") {
+    const variable = formula.variable; // The variable being quantified
+    const subformula = formula.formula; // The formula under the quantifier
+
+    // Step 2: Traverse the subformula and unbind the variable
+    const updatedFormula = unbind_variable(subformula, variable.name);
+
+    // Step 3: Return the formula without the top-level quantifier
+    return updatedFormula;
+  }
+
+  // If it's not a universal quantifier, return the formula as is
+  return formula;
+}
+
+// Helper function to traverse the formula and unbind the variable
+function unbind_variable(node, varName) {
+  // If the node is a variable, check if it matches the quantifier's variable
+  if (node.type === "Variable" && node.name === varName) {
+    // Unbind the variable by setting bound to false
+    return { ...node, bound: false };
+  }
+
+  // If the node is a quantifier, logical binary, application, tuple, or set, we need to recurse into its substructures
+
+  // Handle Quantifiers
+  if (node.type === "Quantifier") {
+    // Recursively unbind the variable in the inner formula
+    return { ...node, formula: unbind_variable(node.formula, varName) };
+  }
+
+  // Handle Logical Unary Operations
+  if (node.type === "LogicalUnary") {
+    return { ...node, formula: unbind_variable(node.formula, varName) };
+  }
+
+  // Handle Logical Binary Operations
+  if (node.type === "LogicalBinary") {
+    return {
+      ...node,
+      left: unbind_variable(node.left, varName),
+      right: unbind_variable(node.right, varName)
+    };
+  }
+
+  // Handle Applications
+  if (node.type === "Application") {
+    return {
+      ...node,
+      arguments: node.arguments.map(arg => unbind_variable(arg, varName))
+    };
+  }
+
+  // Handle Tuples
+  if (node.type === "Tuple") {
+    return {
+      ...node,
+      elements: node.elements.map(elem => unbind_variable(elem, varName))
+    };
+  }
+
+  // Handle Sets
+  if (node.type === "Set") {
+    return {
+      ...node,
+      elements: node.elements.map(elem => unbind_variable(elem, varName))
+    };
+  }
+
+  // For other node types (like constants, binary/unary operators), return the node as is since they don't contain variables
+  return node;
+}
+
+export { is_term, vars_used, vars_rename, lists_merge, universal_specification };

@@ -1,6 +1,6 @@
 // moves.js
 import { unify } from './unify.js';
-import { is_term, vars_used, vars_rename, lists_merge } from './node_helper.js';
+import { is_term, vars_used, vars_rename, lists_merge, universal_specification } from './node_helper.js';
 import { str_unicode } from './strings.js';
 
 // Helper function to get the intersection of two arrays
@@ -82,4 +82,15 @@ function modus_ponens(implication, formula) {
   return result;
 }
 
-export { modus_ponens, substitution };
+function specification(formula) {
+  let currentFormula = formula;
+
+  // Continue applying universalSpecification as long as the top-level node is a universal quantifier
+  while (currentFormula.type === "Quantifier" && currentFormula.name === "forall") {
+    currentFormula = universal_specification(currentFormula);
+  }
+
+  return currentFormula; // Return the final formula once it's no longer universally quantified
+}
+
+export { modus_ponens, substitution, specification };

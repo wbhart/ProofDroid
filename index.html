@@ -41,7 +41,7 @@
     <script type="module">
         import { parse } from './parser.js';
         import { str_repr, str_unicode, str_mathjax } from './strings.js';
-        import { modus_ponens } from './moves.js';
+        import { modus_ponens, specification } from './moves.js';
         import { initializeContext, updateContext } from './context.js';
         import { getCaretPosition } from './interface_helper.js';
         import { listFiles } from './list_files.js';
@@ -307,6 +307,20 @@
             }
         }
 
+        // Function to apply specification to all formulas in the context
+        function specifyContextFormulas() {
+            context.lines.forEach(line => {
+                // Apply the specification function only to formulas that are not already targets
+                if (!line.target) {
+                    line.formula = specification(line.formula);
+                }
+            });
+
+            // After modifying the formulas, update the UI
+            updateContext(context);
+            updateDivWithUnicode();  // Update the view to show the updated formulas
+        }
+        
         document.addEventListener('keydown', async (event) => {
             if (state === 'initial') {
                 if (event.key === 'e') {
@@ -319,6 +333,10 @@
                 } else if (event.key === 'm' && context.lines.length > 0) {
                     state = 'manual';
                     displayManualPrompt();
+
+                    // Apply specification to all formulas in the context
+                    specifyContextFormulas();  // <-- Call the function here
+
                 } else if (event.key === 'l') {
                     await loadSystemSelector();  // Load the system selector when 'l' is pressed
                 }
