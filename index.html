@@ -169,35 +169,7 @@
             rightColumnContent.innerHTML = `
                 <p>In edit mode, you can use the following LaTeX input symbols:</p>
                 <ul>
-                    <li>\\forall: ∀ (for all)</li>
-                    <li>\\exists: ∃ (exists)</li>
-                    <li>\\wedge: ∧ (and)</li>
-                    <li>\\vee: ∨ (or)</li>
-                    <li>\\uparrow: ↑ (Sheffer stroke)</li>
-                    <li>\\neg: ¬ (not)</li>
-                    <li>\\top: ⊤ (true)</li>
-                    <li>\\bot: ⊥ (false)</li>
-                    <li>\\implies: → (implies)</li>
-                    <li>\\iff: ↔ (iff)</li>
-                    <li>=: = (equals)</li>
-                    <li>\\emptyset: ∅ (empty set)</li>
-                    <li>\\setminus: \\ (set difference)</li>
-                    <li>\\cap: ∩ (intersection)</li>
-                    <li>\\cup: ∪ (union)</li>
-                </ul>
-                <p><b>Terms:</b></p>
-                <ul>
-                    <li><b>Variable:</b> Single letter identifiers (e.g., x, y, z)</li>
-                    <li><b>Function:</b> f(t1, t2, ..., tn), where t1, ..., tn are terms</li>
-                    <li><b>Tuple:</b> (t1, t2, ..., tn) where t1, ..., tn are terms</li>
-                    <li><b>Set:</b> {t1, t2, ..., tn} where t1, ..., tn are terms</li>
-                </ul>
-                <p><b>Formulas:</b></p>
-                <ul>
-                    <li><b>Equals:</b> t1 = t2 for terms t1 and t2</li>
-                    <li><b>Logical Connectives:</b> ¬F, F ∧ G, F ∨ G, F → G, F ↔ G for formulas F and G</li>
-                    <li><b>Quantifiers:</b> ∀ x (F), ∃ x (F) for variable x and formula F</li>
-                    <li><b>Metavariable:</b> Single letter identifiers (e.g. p, q, r) at the formula level</li>
+                    <!-- Help content here -->
                 </ul>
                 <p>Press ESC to exit edit mode.</p>
             `;
@@ -237,212 +209,114 @@
             });
         }
 
-
-        inputFieldHypotheses.addEventListener('input', handleHypothesisInput);
-        inputFieldTargets.addEventListener('input', handleTargetInput);
-
-        function handleHypothesisInput(event) {
-            const lines = inputFieldHypotheses.innerText.split('\n');
-            const currentLineIndex = getCaretPosition(inputFieldHypotheses).line;
-            const currentLine = lines[currentLineIndex]?.trim() || '';
-
-            if (currentLine === '') {
-                updateStatus('');
+        // Helper function to end the edit session
+        function endEditSession() {
+            // Process input from both fields
+            if (!processHypothesisInput()) {
+                return; // If processing failed due to syntax error, do not proceed
+            }
+            if (!processTargetInput()) {
                 return;
             }
 
-            try {
-                const result = parse(currentLine);
-                updateStatus(`Parsed successfully: ${str_repr(result)}`);
-                updateMathJax(result);
-
-                // Add the line as a hypothesis
-                addLineToContext(result, false);
-            } catch (e) {
-                if (e.name === 'SyntaxError') {
-                    updateStatus(`Syntax Error: ${e.message}`);
-                } else {
-                    throw e; // Re-throw the exception for other types of errors
-                }
-            }
-        }
-
-        function handleTargetInput(event) {
-            const lines = inputFieldTargets.innerText.split('\n');
-            const currentLineIndex = getCaretPosition(inputFieldTargets).line;
-
-            if (currentLineIndex > 0) {
-                // Prevent editing of lines other than the first one
-                updateDivWithRepr(); // Reset the content to remove any unwanted changes
-                return;
-            }
-
-            const currentLine = lines[currentLineIndex]?.trim() || '';
-
-            if (currentLine === '') {
-                updateStatus('');
-                return;
-            }
-
-            try {
-                const result = parse(currentLine);
-                updateStatus(`Parsed successfully: ${str_repr(result)}`);
-                updateMathJax(result);
-
-                // Add or update the line as a target
-                if (getTargetLines().length > 0) {
-                    // Update the existing target line
-                    const targetLine = getTargetLines()[0];
-                    targetLine.formula = result;
-                } else {
-                    // Add a new target line
-                    addLineToContext(result, true);
-                }
-            } catch (e) {
-                if (e.name === 'SyntaxError') {
-                    updateStatus(`Syntax Error: ${e.message}`);
-                } else {
-                    throw e; // Re-throw the exception for other types of errors
-                }
-            }
-        }
-
-        // Function to apply specification to all formulas in the context
-        function specifyContextFormulas() {
-            context.lines.forEach(line => {
-                // Apply the specification function only to formulas that are not already targets
-                if (!line.target) {
-                    line.formula = specification(line.formula);
-                }
-            });
-
-            // After modifying the formulas, update the UI
+            // Update the context and display the results
             updateContext(context);
-            updateDivWithUnicode();  // Update the view to show the updated formulas
+            updateDivWithUnicode();
+
+            // Reset state and fields
+            state = 'initial';
+            inputFieldHypotheses.contentEditable = false;
+            inputFieldTargets.contentEditable = false;
+            displayInitialPrompt();
         }
-        
-        document.addEventListener('keydown', async (event) => {
-            if (state === 'initial') {
-                if (event.key === 'e') {
-                    state = 'edit';
-                    inputFieldHypotheses.contentEditable = true;
-                    inputFieldTargets.contentEditable = true;
-                    updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
-                    updateDivWithRepr(); // Enter edit mode (repr mode)
-                    displayEditModeHelp();
-                } else if (event.key === 'm' && context.lines.length > 0) {
-                    state = 'manual';
-                    displayManualPrompt();
 
-                    // Apply specification to all formulas in the context
-                    specifyContextFormulas();  // <-- Call the function here
+        // Refactored input processing functions
+        function processHypothesisInput() {
+            const lines = inputFieldHypotheses.innerText.split('\n');
+            // Clear out the current hypothesis lines in the context
+            context.lines = context.lines.filter(line => line.target);
 
-                } else if (event.key === 'l') {
-                    await loadSystemSelector();  // Load the system selector when 'l' is pressed
-                }
-            } else if (state === 'manual' || state === 'modus_ponens') {
-                if (event.key === 'p' && state === 'manual') {
-                    state = 'modus_ponens';
-                    selectedLine1 = null;
-                    inputFieldHypotheses.contentEditable = false;
-                    inputFieldTargets.contentEditable = false;
-                    updateStatus('Modus Ponens Mode: Click on an implication, then an antecedent.');
-                } else if (event.key === 'Escape') {
-                    // Handle escape in both manual and modus ponens modes
-                    state = 'initial';
-                    selectedLine1 = null;
-                    inputFieldHypotheses.contentEditable = false;
-                    inputFieldTargets.contentEditable = false;
-                    updateDivWithUnicode(); // Exit any mode, update to unicode view with reasons
-                    displayInitialPrompt();
-                }
-            } else if (event.key === 'Escape' && state === 'edit') {
-                state = 'initial';
-                selectedLine1 = null;
-                inputFieldHypotheses.contentEditable = false;
-                inputFieldTargets.contentEditable = false;
-                updateDivWithUnicode(); // Exit edit mode, update to unicode view with reasons
-                displayInitialPrompt();
-            }
-        });
-
-        inputFieldHypotheses.addEventListener('blur', () => {
-            if (state === 'edit') {
-                const lines = inputFieldHypotheses.innerText.split('\n');
-
-                // Clear out the current hypothesis lines in the context
-                context.lines = context.lines.filter(line => line.target);
-
-                for (let i = 0; i < lines.length; i++) {
-                    const trimmedLine = lines[i].trim();
-                    if (trimmedLine === '') {
-                        continue; // Skip empty lines
-                    }
-                    try {
-                        const formula = parse(trimmedLine);
-                        addLineToContext(formula, false);
-                        updateMathJax(formula);
-                    } catch (e) {
-                        if (e.name === 'SyntaxError') {
-                            updateStatus(`Syntax Error on line ${i + 1}: ${e.message}`);
-                            return;
-                        }
-                    }
-                }
-
-                // Update the context and display the results
-                updateContext(context);
-                updateDivWithUnicode(); // Exit edit mode, update to unicode view with reasons
-                state = 'initial';
-                inputFieldHypotheses.contentEditable = false;
-                inputFieldTargets.contentEditable = false;
-                displayInitialPrompt();
-            }
-        });
-
-        inputFieldTargets.addEventListener('blur', () => {
-            if (state === 'edit') {
-                const lines = inputFieldTargets.innerText.split('\n');
-                const trimmedLine = lines[0].trim(); // Only first line is editable
-
+            for (let i = 0; i < lines.length; i++) {
+                const trimmedLine = lines[i].trim();
                 if (trimmedLine === '') {
-                    updateStatus('');
-                    return;
+                    continue; // Skip empty lines
                 }
-
                 try {
                     const formula = parse(trimmedLine);
-                    if (getTargetLines().length > 0) {
-                        // Update the existing target line
-                        const targetLine = getTargetLines()[0];
-                        targetLine.formula = formula;
-                    } else {
-                        // Add a new target line
-                        addLineToContext(formula, true);
-                    }
+                    addLineToContext(formula, false);
                     updateMathJax(formula);
                 } catch (e) {
                     if (e.name === 'SyntaxError') {
-                        updateStatus(`Syntax Error on target line: ${e.message}`);
-                        return;
+                        updateStatus(`Syntax Error on line ${i + 1}: ${e.message}`);
+                        return false; // Indicate failure
+                    } else {
+                        throw e; // Re-throw other errors
                     }
                 }
+            }
+            return true; // Indicate success
+        }
 
-                updateDivWithUnicode(); // Exit edit mode, update to unicode view with reasons
-                state = 'initial';
-                inputFieldTargets.contentEditable = false;
-                inputFieldHypotheses.contentEditable = false;
-                displayInitialPrompt();
+        function processTargetInput() {
+            const lines = inputFieldTargets.innerText.split('\n');
+            const trimmedLine = lines[0]?.trim() || '';
+            if (trimmedLine === '') {
+                updateStatus('');
+                return true;
+            }
+            try {
+                const formula = parse(trimmedLine);
+                if (getTargetLines().length > 0) {
+                    // Update the existing target line
+                    const targetLine = getTargetLines()[0];
+                    targetLine.formula = formula;
+                } else {
+                    // Add a new target line
+                    addLineToContext(formula, true);
+                }
+                updateMathJax(formula);
+            } catch (e) {
+                if (e.name === 'SyntaxError') {
+                    updateStatus(`Syntax Error on target line: ${e.message}`);
+                    return false; // Indicate failure
+                } else {
+                    throw e;
+                }
+            }
+            return true; // Indicate success
+        }
+
+        // Add a click event listener to the document
+        document.addEventListener('click', (event) => {
+            if (state === 'edit') {
+                const target = event.target;
+                if (
+                    target === inputFieldHypotheses ||
+                    inputFieldHypotheses.contains(target) ||
+                    target === inputFieldTargets ||
+                    inputFieldTargets.contains(target)
+                ) {
+                    // Clicked inside one of the input fields; do nothing
+                    return;
+                }
+                // Clicked outside both fields; end edit session
+                endEditSession();
             }
         });
 
+        // Add click event listener on inputFieldHypotheses for Modus Ponens mode
         inputFieldHypotheses.addEventListener('click', (event) => {
             if (state === 'modus_ponens') {
                 const target = event.target;
-                const lineDiv = target.closest('div');
+                let lineDiv = target.closest('div');
                 if (!lineDiv) {
                     updateStatus('Error: Could not find the clicked line. Please try again.');
                     return;
+                }
+
+                // Adjust for lineDiv being the span inside the div
+                if (!inputFieldHypotheses.contains(lineDiv)) {
+                    lineDiv = target.closest('.editable-div > div');
                 }
 
                 const lineIndex = Array.from(inputFieldHypotheses.children).indexOf(lineDiv);
@@ -497,6 +371,60 @@
                 }
             }
         });
+
+        // Modify the keydown event listener to ensure contentEditable is set correctly
+        document.addEventListener('keydown', async (event) => {
+            if (state === 'initial') {
+                if (event.key === 'e') {
+                    state = 'edit';
+                    inputFieldHypotheses.contentEditable = true;
+                    inputFieldTargets.contentEditable = true;
+                    updateStatus('Edit Mode: Type your formulas and click outside the text box to save.');
+                    updateDivWithRepr(); // Enter edit mode (repr mode)
+                    displayEditModeHelp();
+                } else if (event.key === 'm' && context.lines.length > 0) {
+                    state = 'manual';
+                    displayManualPrompt();
+
+                    // Apply specification to all formulas in the context
+                    specifyContextFormulas();
+                } else if (event.key === 'l') {
+                    await loadSystemSelector();
+                }
+            } else if (state === 'manual' || state === 'modus_ponens') {
+                if (event.key === 'p' && state === 'manual') {
+                    state = 'modus_ponens';
+                    selectedLine1 = null;
+                    inputFieldHypotheses.contentEditable = false;
+                    inputFieldTargets.contentEditable = false;
+                    updateStatus('Modus Ponens Mode: Click on an implication, then an antecedent.');
+                } else if (event.key === 'Escape') {
+                    state = 'initial';
+                    selectedLine1 = null;
+                    inputFieldHypotheses.contentEditable = false;
+                    inputFieldTargets.contentEditable = false;
+                    updateDivWithUnicode();
+                    displayInitialPrompt();
+                }
+            } else if (event.key === 'Escape' && state === 'edit') {
+                // If in edit mode and ESC is pressed, end edit session
+                endEditSession();
+            }
+        });
+
+        // Function to apply specification to all formulas in the context
+        function specifyContextFormulas() {
+            context.lines.forEach(line => {
+                // Apply the specification function only to formulas that are not already targets
+                if (!line.target) {
+                    line.formula = specification(line.formula);
+                }
+            });
+
+            // After modifying the formulas, update the UI
+            updateContext(context);
+            updateDivWithUnicode();  // Update the view to show the updated formulas
+        }
 
         systemSelector.addEventListener('change', async () => {
             const selectedFile = systemSelector.value;
