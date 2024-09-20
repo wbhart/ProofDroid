@@ -247,7 +247,6 @@
                 try {
                     const formula = parse(trimmedLine);
                     addLineToContext(formula, false);
-                    updateMathJax(formula);
                 } catch (e) {
                     if (e.name === 'SyntaxError') {
                         updateStatus(`Syntax Error on line ${i + 1}: ${e.message}`);
@@ -278,7 +277,6 @@
                     // Add a new target line
                     addLineToContext(negatedFormula, true); // Store negated formula
                 }
-                updateMathJax(formula); // Show the original formula
             } catch (e) {
                 if (e.name === 'SyntaxError') {
                     updateStatus(`Syntax Error on target line: ${e.message}`);
@@ -463,6 +461,58 @@
         inputFieldHypotheses.contentEditable = false;
         inputFieldTargets.contentEditable = false;
         displayInitialPrompt();
+
+        // Add input event listeners for live parsing feedback
+        inputFieldHypotheses.addEventListener('input', onHypothesisInputChange);
+        inputFieldTargets.addEventListener('input', onTargetInputChange);
+
+        function onHypothesisInputChange(event) {
+            if (state !== 'edit') {
+                return;
+            }
+
+            const text = inputFieldHypotheses.innerText;
+            const lines = text.split('\n');
+            const currentLine = lines[lines.length - 1].trim();
+
+            if (currentLine === '') {
+                updateStatus('');
+                return;
+            }
+
+            try {
+                const formula = parse(currentLine);
+                updateMathJax(formula); // Show the parsed formula
+            } catch (e) {
+                if (e.name === 'SyntaxError') {
+                    updateStatus(`Syntax Error: ${e.message}`);
+                }
+            }
+        }
+
+        function onTargetInputChange(event) {
+            if (state !== 'edit') {
+                return;
+            }
+
+            const text = inputFieldTargets.innerText;
+            const lines = text.split('\n');
+            const currentLine = lines[lines.length - 1].trim();
+
+            if (currentLine === '') {
+                updateStatus('');
+                return;
+            }
+
+            try {
+                const formula = parse(currentLine);
+                updateMathJax(formula); // Show the parsed formula
+            } catch (e) {
+                if (e.name === 'SyntaxError') {
+                    updateStatus(`Syntax Error: ${e.message}`);
+                }
+            }
+        }
     </script>
 </body>
 </html>
